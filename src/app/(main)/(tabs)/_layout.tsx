@@ -1,9 +1,35 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+function HeaderTitle({ icon, label }: { icon: IoniconName; label: string }) {
+  return (
+    <View style={headerTitleStyles.row}>
+      <Ionicons name={icon} size={20} color={colors.text} />
+      <Text style={headerTitleStyles.label}>{label}</Text>
+    </View>
+  );
+}
+
+const headerTitleStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  label: {
+    fontFamily: fonts.bold,
+    color: colors.text,
+    fontSize: 19,
+    letterSpacing: 0.3,
+  },
+});
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -54,6 +80,7 @@ export default function TabLayout() {
         name="discover"
         options={{
           title: t('tabs.discover'),
+          headerTitle: () => <HeaderTitle icon="compass" label={t('tabs.discover')} />,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'compass' : 'compass-outline'} size={size} color={color} />
           ),
@@ -63,6 +90,7 @@ export default function TabLayout() {
         name="matches"
         options={{
           title: t('tabs.matches'),
+          headerTitle: () => <HeaderTitle icon="chatbubbles" label={t('tabs.matches')} />,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />
           ),
@@ -72,6 +100,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
+          headerTitle: () => <HeaderTitle icon="person" label={t('tabs.profile')} />,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
           ),

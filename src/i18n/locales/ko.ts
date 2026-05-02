@@ -29,6 +29,7 @@ export default {
         logout: "로그아웃",
         skip: "건너뛰기",
         back: "뒤로",
+        ageSuffix: "{{age}}세",
     },
 
     signupWizard: {
@@ -352,7 +353,7 @@ export default {
 
     tabs: {
         discover: "탐색",
-        matches: "매치",
-        profile: "프로필",
+        matches: "채팅",
+        profile: "내 프로필",
     },
 };

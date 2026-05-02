@@ -29,6 +29,7 @@ export default {
     logout: 'Logout',
     skip: 'Skip',
     back: 'Back',
+    ageSuffix: '{{age}} y/o',
   },
 
   signupWizard: {
@@ -351,7 +352,7 @@ export default {
 
   tabs: {
     discover: 'Discover',
-    matches: 'Matches',
-    profile: 'Profile',
+    matches: 'Chats',
+    profile: 'My Profile',
   },
 };

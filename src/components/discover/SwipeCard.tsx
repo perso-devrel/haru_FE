@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import CountryFlag from 'react-native-country-flag';
+import { useTranslation } from 'react-i18next';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import {
   PanGestureHandler,
@@ -23,48 +25,109 @@ import type { DiscoverCandidate } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
-const COVER_SIZE = Math.round((CARD_WIDTH - 40) * 0.8);
+const COVER_SIZE = Math.round((CARD_WIDTH - 40) * 0.95);
 
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
 const FLY_OUT_DISTANCE = SCREEN_WIDTH * 1.4;
 const ROTATION_RANGE = 14;
 
-const WAVE_BAR_COUNT = 36;
-const WAVE_BAR_WIDTH = 3;
-const WAVE_MAX_HEIGHT = 28;
-const WAVE_MIN_HEIGHT = 4;
+const WAVE_BAR_COUNT = 32;
+const WAVE_BAR_WIDTH = 4;
+const WAVE_MAX_HEIGHT = 54;
+const WAVE_MIN_HEIGHT = 3;
 
-// Cheap deterministic PRNG so every candidate gets a distinct waveform
-// silhouette that does not jitter between re-renders.
-function hashSeed(str: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
+// Deterministic waveform shared by every candidate. Four Gaussian peaks
+// at fixed positions create utterance-like clusters (the "syllables"),
+// modulated by a fast per-bar oscillation so adjacent bars vary sharply
+// — matches the look of a recorded voice waveform preview.
+const BASE_WAVEFORM: readonly number[] = Array.from(
+  { length: WAVE_BAR_COUNT },
+  (_, i) => {
+    const t = i / (WAVE_BAR_COUNT - 1);
+    const peak = (center: number, width: number, amp: number) =>
+      amp * Math.exp(-Math.pow((t - center) / width, 2));
+    const envelope =
+      peak(0.13, 0.08, 0.55) +
+      peak(0.34, 0.10, 0.95) +
+      peak(0.58, 0.09, 0.78) +
+      peak(0.82, 0.09, 0.85);
+    const detail =
+      0.55 +
+      0.30 * Math.sin(i * 2.1 + 0.5) +
+      0.15 * Math.sin(i * 0.9 + 1.7);
+    const normalized = Math.max(0.04, Math.min(1, envelope * detail));
+    return Math.round(
+      WAVE_MIN_HEIGHT + (WAVE_MAX_HEIGHT - WAVE_MIN_HEIGHT) * normalized,
+    );
+  },
+);
+
+const WAVE_PULSE_DURATION = 360;
+const WAVE_PULSE_MIN_SCALE = 0.42;
+const WAVE_PULSE_PHASE_STEP = 80;
+
+interface WaveBarProps {
+  height: number;
+  index: number;
+  played: boolean;
+  isPlaying: boolean;
 }
 
-function mulberry32(seed: number): () => number {
-  let state = seed;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// Per-bar Animated.Value driving a scaleY pulse on the UI thread. Each bar
+// gets a deterministic phase offset so the row ripples instead of pulsing
+// in unison. Pure native-driver transforms — no layout work, no JS bridge
+// per frame, safe on both iOS and Android.
+function WaveBar({ height, index, played, isPlaying }: WaveBarProps) {
+  const scale = useRef(new Animated.Value(1)).current;
 
-function buildWaveform(seed: string): number[] {
-  const rand = mulberry32(hashSeed(seed));
-  return Array.from({ length: WAVE_BAR_COUNT }, (_, i) => {
-    // Sine envelope quiets the ends so the shape reads as a single utterance
-    // instead of a flat rectangle of noise.
-    const envelope = Math.sin((Math.PI * (i + 0.5)) / WAVE_BAR_COUNT);
-    const raw = WAVE_MIN_HEIGHT + rand() * (WAVE_MAX_HEIGHT - WAVE_MIN_HEIGHT);
-    return Math.max(WAVE_MIN_HEIGHT, Math.round(raw * (0.4 + 0.6 * envelope)));
-  });
+  useEffect(() => {
+    if (!isPlaying) {
+      scale.stopAnimation(() => {
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 160,
+          useNativeDriver: true,
+        }).start();
+      });
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: WAVE_PULSE_MIN_SCALE,
+          duration: WAVE_PULSE_DURATION,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: WAVE_PULSE_DURATION,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    const phase = (index * WAVE_PULSE_PHASE_STEP) % (WAVE_PULSE_DURATION * 2);
+    const start = setTimeout(() => loop.start(), phase);
+
+    return () => {
+      clearTimeout(start);
+      loop.stop();
+    };
+  }, [isPlaying, index, scale]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.waveBar,
+        {
+          height,
+          backgroundColor: played ? colors.primary : 'rgba(255,255,255,0.28)',
+          transform: [{ scaleY: scale }],
+        },
+      ]}
+    />
+  );
 }
 
 interface SwipeCardProps {
@@ -74,6 +137,7 @@ interface SwipeCardProps {
 }
 
 export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
+  const { t } = useTranslation();
   const age = calculateAge(candidate.birth_date);
   const photo = candidate.photos[0];
   const audioUrl = candidate.voice_intro_audio_url;
@@ -83,8 +147,27 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
   const isPlaying = audioUrl ? status.playing : false;
   const duration = status.duration || 0;
   const currentTime = status.currentTime || 0;
-  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
-  const waveform = useMemo(() => buildWaveform(candidate.id), [candidate.id]);
+
+  // expo-audio's status only emits ~every 500ms, so deriving progress
+  // straight from status.currentTime makes the waveform fill light up in
+  // chunks (multiple bars at once). Poll the live player.currentTime at
+  // 50ms while playing so the fill advances roughly bar-by-bar.
+  const [smoothProgress, setSmoothProgress] = useState(0);
+  useEffect(() => {
+    if (duration <= 0) {
+      setSmoothProgress(0);
+      return;
+    }
+    const sample = () => {
+      const t = player.currentTime ?? 0;
+      setSmoothProgress(Math.min(Math.max(t / duration, 0), 1));
+    };
+    sample();
+    if (!isPlaying) return;
+    const id = setInterval(sample, 50);
+    return () => clearInterval(id);
+  }, [isPlaying, duration, player, currentTime]);
+  const progress = smoothProgress;
 
   const togglePlay = useCallback(() => {
     if (!audioUrl) return;
@@ -204,32 +287,37 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
 
       <View style={styles.meta}>
         <Text style={styles.name} numberOfLines={1}>
-          {candidate.display_name}, {age}
+          {candidate.display_name}
         </Text>
-        <Text style={styles.detail} numberOfLines={1}>
-          {candidate.nationality} · {candidate.language}
-        </Text>
+        <View style={styles.detailRow}>
+          <Text style={styles.detail} numberOfLines={1}>
+            {t('common.ageSuffix', { age })}
+          </Text>
+          <Text style={styles.detailSep}>•</Text>
+          {candidate.nationality ? (
+            <CountryFlag
+              isoCode={candidate.nationality}
+              size={11}
+              style={styles.flag}
+            />
+          ) : null}
+          <Text style={styles.detail} numberOfLines={1}>
+            {candidate.nationality}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.progressWrap}>
         <View style={styles.waveform}>
-          {waveform.map((h, i) => {
-            const played = (i + 0.5) / WAVE_BAR_COUNT <= progress;
-            return (
-              <View
-                key={i}
-                style={[
-                  styles.waveBar,
-                  {
-                    height: h,
-                    backgroundColor: played
-                      ? colors.primary
-                      : 'rgba(255,255,255,0.28)',
-                  },
-                ]}
-              />
-            );
-          })}
+          {BASE_WAVEFORM.map((h, i) => (
+            <WaveBar
+              key={i}
+              height={h}
+              index={i}
+              played={(i + 0.5) / WAVE_BAR_COUNT <= progress}
+              isPlaying={isPlaying}
+            />
+          ))}
         </View>
       </View>
 
@@ -239,8 +327,8 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
           accessibilityLabel="pass"
           style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}
         >
-          <Ionicons name="play-skip-back" size={28} color={colors.white} />
           <Text style={[styles.sideLabel, { color: colors.white }]}>Skip</Text>
+          <Ionicons name="play-back" size={30} color={colors.white} />
         </Pressable>
 
         <Pressable
@@ -257,7 +345,7 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
           >
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
-              size={30}
+              size={26}
               color={colors.white}
               style={isPlaying ? undefined : styles.playIconOffset}
             />
@@ -269,7 +357,7 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
           accessibilityLabel="like"
           style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}
         >
-          <Ionicons name="play-skip-forward" size={28} color={colors.like} />
+          <Ionicons name="play-forward" size={30} color={colors.like} />
           <Text style={[styles.sideLabel, { color: colors.like }]}>Like</Text>
         </Pressable>
       </View>
@@ -284,7 +372,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 22,
+    paddingBottom: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
@@ -299,27 +387,42 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   meta: {
-    marginTop: 14,
+    marginTop: 10,
     alignItems: 'center',
     width: '100%',
   },
   name: {
-    fontSize: 22,
+    fontSize: 21,
     fontFamily: fonts.bold,
     color: colors.white,
     letterSpacing: 0.3,
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   detail: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.75)',
-    marginTop: 4,
     fontFamily: fonts.medium,
     letterSpacing: 0.3,
   },
+  detailSep: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.55)',
+    marginHorizontal: 8,
+  },
+  flag: {
+    width: 16,
+    height: 11,
+    marginRight: 6,
+    borderRadius: 1.5,
+  },
   progressWrap: {
     width: '100%',
-    paddingHorizontal: 6,
-    marginTop: 14,
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
   waveform: {
     flexDirection: 'row',
@@ -335,30 +438,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 36,
-    marginTop: 14,
+    gap: 30,
+    marginTop: 6,
   },
   sideBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    height: 44,
+    borderRadius: 22,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
   },
   sideLabel: {
-    marginTop: 4,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: fonts.medium,
     letterSpacing: 0.4,
   },
   playShell: {
-    borderRadius: 36,
+    borderRadius: 30,
     ...shadows.glow,
   },
   playBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
   },

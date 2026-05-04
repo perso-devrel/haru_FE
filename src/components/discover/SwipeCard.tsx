@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: "rgba(20,10,25,0.55)",
+        backgroundColor: "rgba(20,10,25,0.62)",
     },
     cover: {
         width: COVER_SIZE,

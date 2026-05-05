@@ -71,7 +71,7 @@ export default function SetupStep3() {
       birth_date: profile.birth_date,
       gender: profile.gender,
       nationality: profile.nationality,
-      languages: profile.languages,
+      language: profile.language,
       voice_intro: nextBio,
       interests: profile.interests,
     });
@@ -139,7 +139,7 @@ export default function SetupStep3() {
         <BioPhrasePicker
           value={bio}
           onChange={handleBioChange}
-          language={profile?.languages?.[0]?.code ?? profile?.language ?? 'ko'}
+          language={profile?.language ?? 'ko'}
           disabled={!voiceReady}
           lockedHint={!voiceReady ? t('setupProfile.bioLockedHint') : undefined}
           error={bioError}

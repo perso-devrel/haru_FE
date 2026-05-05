@@ -16,14 +16,14 @@ import { FormField } from '@/components/ui/FormField';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { Button } from '@/components/ui/Button';
 import { WizardHeader } from '@/components/setup/WizardHeader';
-import { LanguageProficiencyEditor } from '@/components/ui/LanguageProficiencyEditor';
+import { LanguagePicker } from '@/components/ui/LanguagePicker';
 import { useProfile } from '@/hooks/useProfile';
 import { colors, radii } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { SUPPORTED_NATIONALITIES, type NationalityCode } from '@/constants/nationalities';
 import { INTEREST_OPTIONS, INTEREST_SECTIONS, MAX_INTERESTS } from '@/constants/interests';
+import { isLanguageCode, type LanguageCode } from '@/constants/languages';
 import { validateDisplayName, DISPLAY_NAME_MAX } from '@/utils/validators';
-import type { LanguageProficiency } from '@/types';
 
 const GENDER_OPTIONS = ['male', 'female', 'other'] as const;
 
@@ -44,36 +44,33 @@ export default function EditProfileScreen() {
     birth_date: string;
     gender: 'male' | 'female' | 'other';
     nationality: string;
-    languages: LanguageProficiency[];
+    language: LanguageCode | null;
   }>({
     display_name: profile?.display_name ?? '',
     birth_date: profile?.birth_date ?? '',
     gender: profile?.gender ?? 'male',
     nationality: profile?.nationality ?? '',
-    languages:
-      profile?.languages && profile.languages.length > 0
-        ? profile.languages
-        : profile?.language
-          ? [{ code: profile.language, level: 3 }]
-          : [],
+    language: profile && isLanguageCode(profile.language)
+      ? (profile.language as LanguageCode)
+      : null,
   });
   const [nationalityOpen, setNationalityOpen] = useState(false);
   const [interests, setInterests] = useState<string[]>(profile?.interests ?? []);
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
   const [nationalityError, setNationalityError] = useState<string | null>(null);
-  const [languagesError, setLanguagesError] = useState<string | null>(null);
+  const [languageError, setLanguageError] = useState<string | null>(null);
 
   // Auto-scroll target tracking. ScrollView measures each labeled section's
   // y-offset via onLayout so handleSave can scroll the first invalid field
   // back into view if it's been pushed offscreen by long content above.
-  type FieldKey = 'display_name' | 'birth_date' | 'nationality' | 'languages';
+  type FieldKey = 'display_name' | 'birth_date' | 'nationality' | 'language';
   const scrollRef = useRef<ScrollView>(null);
   const fieldYRef = useRef<Record<FieldKey, number>>({
     display_name: 0,
     birth_date: 0,
     nationality: 0,
-    languages: 0,
+    language: 0,
   });
   const onFieldLayout = (key: FieldKey) => (e: LayoutChangeEvent) => {
     fieldYRef.current[key] = e.nativeEvent.layout.y;
@@ -89,20 +86,14 @@ export default function EditProfileScreen() {
 
   useEffect(() => {
     if (profile) {
-      // Pre-006 rows may not have `languages` populated. Fall back to a
-      // synthesized Lv.3 entry built from the legacy primary language.
-      const initialLanguages: LanguageProficiency[] =
-        profile.languages && profile.languages.length > 0
-          ? profile.languages
-          : profile.language
-            ? [{ code: profile.language, level: 3 }]
-            : [];
       setForm({
         display_name: profile.display_name,
         birth_date: profile.birth_date,
         gender: profile.gender,
         nationality: profile.nationality,
-        languages: initialLanguages,
+        language: isLanguageCode(profile.language)
+          ? (profile.language as LanguageCode)
+          : null,
       });
       setInterests(profile.interests);
     }
@@ -140,15 +131,15 @@ export default function EditProfileScreen() {
     const nameErr = validateDisplayName(form.display_name);
     const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(form.birth_date);
     const nationalityMissing = !form.nationality;
-    const languagesMissing = form.languages.length === 0;
+    const languageMissing = !form.language;
 
     setDisplayNameError(nameErr ? t(nameErr.key, nameErr.vars) : null);
     setBirthDateError(dateValid ? null : t('validation.birthDateInvalid'));
     setNationalityError(
       nationalityMissing ? t('setupProfile.selectNationalityRequired') : null,
     );
-    setLanguagesError(
-      languagesMissing ? t('setupProfile.addAtLeastOneLanguage') : null,
+    setLanguageError(
+      languageMissing ? t('setupProfile.selectLanguageRequired') : null,
     );
 
     if (nameErr) {
@@ -163,15 +154,17 @@ export default function EditProfileScreen() {
       scrollToField('nationality');
       return;
     }
-    if (languagesMissing) {
-      scrollToField('languages');
+    if (languageMissing || !form.language) {
+      scrollToField('language');
       return;
     }
     try {
-      const { languages, ...rest } = form;
       await upsertProfile({
-        ...rest,
-        languages,
+        display_name: form.display_name,
+        birth_date: form.birth_date,
+        gender: form.gender,
+        nationality: form.nationality,
+        language: form.language,
         voice_intro: profile?.voice_intro ?? null,
         interests,
       });
@@ -294,17 +287,18 @@ export default function EditProfileScreen() {
           <ErrorText testID="edit-profile-nationality-error">{nationalityError}</ErrorText>
         </View>
 
-        <View onLayout={onFieldLayout('languages')}>
-          <Text style={[styles.label, styles.sectionGap]}>{t('setupProfile.languages')}</Text>
-          <LanguageProficiencyEditor
-            value={form.languages}
+        <View onLayout={onFieldLayout('language')}>
+          <Text style={[styles.label, styles.sectionGap]}>{t('setupProfile.language')}</Text>
+          <LanguagePicker
+            mode="single"
+            value={form.language}
             onChange={(next) => {
-              setForm((f) => ({ ...f, languages: next }));
-              if (languagesError && next.length > 0) setLanguagesError(null);
+              setForm((f) => ({ ...f, language: next }));
+              if (languageError && next) setLanguageError(null);
             }}
-            showPrimary
+            hasError={!!languageError}
           />
-          <ErrorText testID="edit-profile-languages-error">{languagesError}</ErrorText>
+          <ErrorText testID="edit-profile-language-error">{languageError}</ErrorText>
         </View>
 
         <Text style={[styles.label, styles.sectionGap]}>

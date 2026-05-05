@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { LanguageProficiency, ProfileUpsertRequest, PreferenceUpdateRequest } from '@/types';
+import type { ProfileUpsertRequest, PreferenceUpdateRequest } from '@/types';
+import type { LanguageCode } from '@/constants/languages';
 
 export type Gender = 'male' | 'female' | 'other';
 
@@ -8,9 +9,9 @@ interface SignupDraftState {
   birth_date: string;
   gender: Gender;
   nationality: string;
-  // Multi-language proficiency. languages[0].code is the primary language
-  // for the BE translation/TTS pipeline (derived server-side).
-  languages: LanguageProficiency[];
+  // Single primary language code (mig 009 simplification). Required at submit
+  // time but starts null while step1 is being filled in.
+  language: LanguageCode | null;
   bio: string;
   interests: string[];
   preferences: PreferenceUpdateRequest | null;
@@ -23,7 +24,7 @@ interface SignupDraftState {
     birth_date: string;
     gender: Gender;
     nationality: string;
-    languages: LanguageProficiency[];
+    language: LanguageCode;
   }) => void;
   setBio: (bio: string) => void;
   setInterests: (interests: string[]) => void;
@@ -38,7 +39,7 @@ const initial = {
   birth_date: '',
   gender: 'male' as Gender,
   nationality: '',
-  languages: [] as LanguageProficiency[],
+  language: null as LanguageCode | null,
   bio: '',
   interests: [] as string[],
   preferences: null as PreferenceUpdateRequest | null,
@@ -56,12 +57,18 @@ export const useSignupDraftStore = create<SignupDraftState>((set, get) => ({
   reset: () => set(initial),
   buildProfilePayload: () => {
     const s = get();
+    if (!s.language) {
+      // Step1 always sets the language before navigating forward, so this is
+      // only reachable if the wizard is somehow skipped. Throw rather than
+      // ship an invalid payload that the BE will reject.
+      throw new Error('signupDraft: language is required before building profile payload');
+    }
     return {
       display_name: s.display_name,
       birth_date: s.birth_date,
       gender: s.gender,
       nationality: s.nationality,
-      languages: s.languages,
+      language: s.language,
       voice_intro: s.bio.trim() ? s.bio : null,
       interests: s.interests,
     };

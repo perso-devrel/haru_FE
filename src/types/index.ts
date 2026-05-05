@@ -16,16 +16,6 @@ export interface TokenRefreshResponse {
   refresh_token: string;
 }
 
-// === Language proficiency ===
-// 1 = beginner, 2 = intermediate (daily conversation),
-// 3 = native (fluent / unrestricted conversation).
-export type LanguageLevel = 1 | 2 | 3;
-
-export interface LanguageProficiency {
-  code: string;
-  level: LanguageLevel;
-}
-
 // === Profile ===
 export interface Profile {
   id: string;
@@ -33,11 +23,11 @@ export interface Profile {
   birth_date: string;
   gender: 'male' | 'female' | 'other';
   nationality: string;
-  // Primary language code, derived server-side from languages[0].code.
+  // Single primary language code from the launch whitelist (ko/ja/en/th/hi).
+  // Mig 009 collapsed the multi-language + level model down to a scalar —
+  // chat translation/TTS and the cross-language discover filter all key off
+  // this one column.
   language: string;
-  // Multi-language proficiency. Optional during BE migration window —
-  // pre-006 rows are absent until backfill runs.
-  languages?: LanguageProficiency[];
   voice_intro: string | null;
   interests: string[];
   photos: string[];
@@ -55,10 +45,8 @@ export interface ProfileUpsertRequest {
   birth_date: string;
   gender: 'male' | 'female' | 'other';
   nationality: string;
-  // Either languages (preferred) or legacy language must be set. The route
-  // derives `language` = languages[0].code when languages is provided.
-  language?: string;
-  languages?: LanguageProficiency[];
+  // Whitelisted scalar code (ko/ja/en/th/hi). Required by BE since mig 009.
+  language: string;
   voice_intro?: string | null;
   interests?: string[];
 }
@@ -242,8 +230,9 @@ export interface UserPreference {
   min_age: number;
   max_age: number;
   preferred_genders: ('male' | 'female' | 'other')[];
-  // Codes + minimum required level. Empty = no language preference.
-  preferred_languages_detail: LanguageProficiency[];
+  // Whitelisted language codes. Empty = no language preference. Mig 009
+  // dropped the level dimension so this is now a flat string array.
+  preferred_languages: string[];
   // ISO-3166-1 alpha-2 country codes. Empty = no nationality preference.
   preferred_nationalities: string[];
   updated_at?: string;
@@ -253,7 +242,7 @@ export interface PreferenceUpdateRequest {
   min_age?: number;
   max_age?: number;
   preferred_genders?: ('male' | 'female' | 'other')[];
-  preferred_languages_detail?: LanguageProficiency[];
+  preferred_languages?: string[];
   preferred_nationalities?: string[];
 }
 

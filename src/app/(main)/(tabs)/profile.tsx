@@ -351,36 +351,17 @@ export default function ProfileScreen() {
             </View>
           </View>
         ) : null}
-        {/* Prefer the multi-language list; fall back to the legacy single-code
-            field so pre-006 profiles still render the language row. */}
-        {(() => {
-          const langList: Array<{ code: string; level?: 1 | 2 | 3 }> =
-            profile.languages?.length
-              ? profile.languages
-              : profile.language
-                ? [{ code: profile.language }]
-                : [];
-          if (langList.length === 0) return null;
-          return (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{t('profile.infoLabels.language')}</Text>
-              <View style={styles.infoLanguageStack}>
-                {langList.map((lang, i) => (
-                  <View key={`${lang.code}-${i}`} style={styles.infoLanguageRow}>
-                    <Text style={styles.infoValue} numberOfLines={1}>
-                      {t(`languages.${lang.code}`, { defaultValue: lang.code })}
-                    </Text>
-                    {lang.level ? (
-                      <View style={styles.infoLevelChip}>
-                        <Text style={styles.infoLevelText}>Lv.{lang.level}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            </View>
-          );
-        })()}
+        {/* Single primary language (mig 009 simplification). Hide the row
+            entirely when language is missing — pre-step1 profiles will fill
+            it in on save. */}
+        {profile.language ? (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{t('profile.infoLabels.language')}</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>
+              {t(`languages.${profile.language}`, { defaultValue: profile.language })}
+            </Text>
+          </View>
+        ) : null}
         {profile.interests.length > 0 ? (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>{t('profile.infoLabels.interests')}</Text>
@@ -646,27 +627,6 @@ const styles = StyleSheet.create({
     height: 12,
     marginRight: 6,
     borderRadius: 1.5,
-  },
-  infoLanguageStack: {
-    flex: 1,
-    gap: 6,
-  },
-  infoLanguageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoLevelChip: {
-    backgroundColor: colors.white,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-  },
-  infoLevelText: {
-    fontSize: 11,
-    color: colors.primaryDark,
-    fontFamily: fonts.medium,
-    letterSpacing: 0.2,
   },
   infoTags: {
     flex: 1,

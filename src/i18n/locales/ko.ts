@@ -438,6 +438,12 @@ export default {
 
     settings: {
         title: "설정",
+        languageSettings: "언어 설정",
+    },
+
+    languageSettings: {
+        title: "언어 설정",
+        subtitle: "앱에서 사용할 언어를 선택하세요.",
     },
 
     audioPlayer: {

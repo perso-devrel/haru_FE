@@ -21,6 +21,7 @@ export default function MainLayout() {
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="settings/edit-profile" />
       <Stack.Screen name="settings/edit-bio" />
+      <Stack.Screen name="settings/language" />
       <Stack.Screen
         name="chat/[matchId]"
         options={{

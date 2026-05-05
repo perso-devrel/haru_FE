@@ -437,6 +437,12 @@ export default {
 
   settings: {
     title: 'Settings',
+    languageSettings: 'Language',
+  },
+
+  languageSettings: {
+    title: 'Language',
+    subtitle: 'Choose the language you want to use in the app.',
   },
 
   audioPlayer: {

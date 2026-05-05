@@ -44,6 +44,10 @@ export default function SettingsScreen() {
             label={t('profile.voiceSettings')}
             onPress={() => router.push('/(main)/settings/voice')}
           />
+          <MenuCardButton
+            label={t('settings.languageSettings')}
+            onPress={() => router.push('/(main)/settings/language')}
+          />
         </View>
         <Button
           title={t('common.logout')}

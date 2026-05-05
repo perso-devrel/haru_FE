@@ -1,5 +1,6 @@
 import ko from './locales/ko';
 import en from './locales/en';
+import ja from './locales/ja';
 
 type Dict = { [k: string]: string | Dict };
 
@@ -20,11 +21,19 @@ function flatten(obj: Dict, prefix = ''): string[] {
 describe('i18n locale parity', () => {
   const koKeys = flatten(ko as unknown as Dict);
   const enKeys = flatten(en as unknown as Dict);
+  const jaKeys = flatten(ja as unknown as Dict);
 
-  it('ko and en expose the exact same set of leaf keys', () => {
-    const koOnly = koKeys.filter((k) => !enKeys.includes(k));
-    const enOnly = enKeys.filter((k) => !koKeys.includes(k));
-    expect({ koOnly, enOnly }).toEqual({ koOnly: [], enOnly: [] });
+  it('ko, en and ja expose the exact same set of leaf keys', () => {
+    const koOnlyVsEn = koKeys.filter((k) => !enKeys.includes(k));
+    const enOnlyVsKo = enKeys.filter((k) => !koKeys.includes(k));
+    const jaOnlyVsKo = jaKeys.filter((k) => !koKeys.includes(k));
+    const koOnlyVsJa = koKeys.filter((k) => !jaKeys.includes(k));
+    expect({ koOnlyVsEn, enOnlyVsKo, jaOnlyVsKo, koOnlyVsJa }).toEqual({
+      koOnlyVsEn: [],
+      enOnlyVsKo: [],
+      jaOnlyVsKo: [],
+      koOnlyVsJa: [],
+    });
   });
 
   it('every leaf value is a non-empty string', () => {
@@ -42,13 +51,16 @@ describe('i18n locale parity', () => {
     }
     expect(collectEmpties(ko as unknown as Dict)).toEqual([]);
     expect(collectEmpties(en as unknown as Dict)).toEqual([]);
+    expect(collectEmpties(ja as unknown as Dict)).toEqual([]);
   });
 
-  it('interpolation variables match between locales', () => {
+  it('interpolation variables match across all locales', () => {
     // Pull {{name}} / {{count}} placeholders and ensure each key has the
-    // same set on both sides (otherwise translators will silently drop one).
+    // same set across all locales (otherwise translators will silently drop
+    // one).
     const koFlat = ko as unknown as Dict;
     const enFlat = en as unknown as Dict;
+    const jaFlat = ja as unknown as Dict;
 
     function lookup(dict: Dict, path: string): string | undefined {
       const parts = path.split('.');
@@ -65,12 +77,13 @@ describe('i18n locale parity', () => {
       return [...value.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]).sort();
     }
 
-    const mismatched: { key: string; ko: string[]; en: string[] }[] = [];
+    const mismatched: { key: string; ko: string[]; en: string[]; ja: string[] }[] = [];
     for (const key of koKeys) {
       const k = varsOf(lookup(koFlat, key));
       const e = varsOf(lookup(enFlat, key));
-      if (k.join(',') !== e.join(',')) {
-        mismatched.push({ key, ko: k, en: e });
+      const j = varsOf(lookup(jaFlat, key));
+      if (k.join(',') !== e.join(',') || k.join(',') !== j.join(',')) {
+        mismatched.push({ key, ko: k, en: e, ja: j });
       }
     }
     expect(mismatched).toEqual([]);

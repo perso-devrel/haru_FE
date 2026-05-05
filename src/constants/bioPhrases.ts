@@ -6,13 +6,14 @@ export type BioPhraseCategory =
   | 'confidence'
   | 'aegyo';
 
-// Languages with hand-translated preset bodies. profile.language values outside
-// this set fall back to English so the displayed text matches the language the
-// voice clone will synthesize — preventing TTS mismatch when e.g. a Japanese
-// user picks a line that only existed in Korean.
-export type BioPhraseLanguage = 'ko' | 'en' | 'ja' | 'zh';
+// Languages with hand-translated preset bodies. Mirrors the launch whitelist
+// (constants/languages.ts → ko/ja/en/th/hi) so every supported profile
+// language has a native preset and the displayed text matches the language
+// the voice clone will synthesize. profile.language values outside this set
+// fall back to English to avoid TTS mismatch.
+export type BioPhraseLanguage = 'ko' | 'en' | 'ja' | 'th' | 'hi';
 
-const SUPPORTED_BIO_LANGUAGES: readonly BioPhraseLanguage[] = ['ko', 'en', 'ja', 'zh'];
+const SUPPORTED_BIO_LANGUAGES: readonly BioPhraseLanguage[] = ['ko', 'en', 'ja', 'th', 'hi'];
 const FALLBACK_BIO_LANGUAGE: BioPhraseLanguage = 'en';
 
 export interface BioPhrase {
@@ -29,7 +30,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '맛있는 거 먹으러 다니는 게 제 취미인데, 같이 맛집 리스트 공유하실 분 찾아요.',
       en: "Hunting down good food is basically my hobby — looking for someone to trade restaurant lists with.",
       ja: '美味しいものを食べ歩くのが趣味なんです。一緒にお店リストを交換できる人、探してます。',
-      zh: '到处寻找美食是我的爱好，想找个一起分享美食清单的人。',
+      th: 'ตามหาของอร่อยกินคืองานอดิเรกของฉันเลย กำลังหาคนมาแลกลิสต์ร้านโปรดด้วยกัน',
+      hi: 'अच्छा खाना ढूँढ़ते रहना मेरा शौक है — किसी की तलाश है जिसके साथ रेस्तराँ की लिस्ट शेयर कर सकूँ।',
     },
   },
   {
@@ -39,7 +41,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '그냥 자연스럽게 대화해봐요. 인연이면 이어지지 않을까요?',
       en: "Let's just chat naturally. If we click, things will fall into place, right?",
       ja: '自然に話してみませんか？縁があれば、きっと繋がりますよね。',
-      zh: '就自然地聊聊吧。是缘分的话总会有结果的，对吧？',
+      th: 'มาคุยกันแบบเป็นธรรมชาติดูสิ ถ้ามีโชคชะตาก็คงจะเชื่อมโยงกันเองใช่ไหม',
+      hi: 'चलो बस आराम से बात करते हैं। जो जुड़ना होगा वो ख़ुद-ब-ख़ुद हो जाएगा, है न?',
     },
   },
   {
@@ -49,7 +52,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '부담 없이 한 번 얘기해봐요. 그냥 편하게',
       en: "Let's just chat — no pressure, no big deal.",
       ja: '気軽に話してみましょう。肩の力を抜いて。',
-      zh: '别有压力，就轻松聊聊吧。',
+      th: 'ไม่ต้องเกร็ง คุยกันสบายๆ ก่อนเลย',
+      hi: 'कोई बोझ नहीं — बस हल्के-फुल्के अंदाज़ में बात कर लेते हैं।',
     },
   },
   {
@@ -59,7 +63,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '글로 보는 것보다 목소리로 듣는 게 훨씬 그 사람 같잖아요. 만나서 반가워요.',
       en: "You learn more about someone from their voice than their words. Nice to meet you.",
       ja: '文字で読むより、声で聞いたほうがずっとその人らしいですよね。お会いできて嬉しいです。',
-      zh: '比起文字，声音更能让人感受到一个人。很高兴认识你。',
+      th: 'ฟังเสียงสัมผัสตัวตนของคนคนนั้นได้มากกว่าตัวอักษรเยอะเลย ดีใจที่ได้รู้จักนะ',
+      hi: 'शब्दों से ज़्यादा आवाज़ में किसी का असली रंग झलकता है। मिलकर अच्छा लगा।',
     },
   },
   {
@@ -69,7 +74,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '여기서 지나가면 조금 아쉬울 것 같지 않아요?',
       en: "Wouldn't it feel a little like a missed chance if you scrolled past me?",
       ja: 'ここで通り過ぎたら、ちょっともったいない気がしませんか？',
-      zh: '就这样划过去，是不是有点可惜？',
+      th: 'ถ้าปัดผ่านฉันไปตรงนี้ จะรู้สึกเสียดายนิดหน่อยไหม',
+      hi: 'यूँ ही स्वाइप कर के निकल गए तो थोड़ा अफ़सोस नहीं होगा क्या?',
     },
   },
   {
@@ -79,7 +85,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '제 목소리 방금 들었을 때, 1초라도 설렜으면 좋겠는데... 설렜나요?',
       en: "I'm hoping my voice gave you a flutter — even just for a second. Did it?",
       ja: '今の声、ほんの一瞬でもときめいてくれたら嬉しいんですけど…どうでした？',
-      zh: '刚才听到我的声音，哪怕只有一秒心动也好…心动了吗？',
+      th: 'ตอนได้ยินเสียงฉันเมื่อกี้ แค่หนึ่งวินาทีก็ได้ ถ้าหัวใจเต้นแรงก็คงดี... เต้นไหม',
+      hi: 'मेरी आवाज़ अभी सुनी, एक पल को भी दिल धड़का तो ख़ुशी होगी... धड़का क्या?',
     },
   },
   {
@@ -89,7 +96,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '저랑 얘기하면 시간 가는 줄 모르실걸요? 일단 말 걸어주세요!',
       en: "Talk to me and you'll lose track of time, I promise. Just say hi!",
       ja: '私と話すと時間を忘れちゃうかも。とりあえず声かけてください！',
-      zh: '和我聊起来你会忘了时间的，先来打个招呼吧！',
+      th: 'คุยกับฉันแล้วเวลาผ่านไปไม่รู้ตัวแน่ๆ ทักมาก่อนเลย!',
+      hi: 'मुझसे बात करोगे तो पता ही नहीं चलेगा वक़्त कब बीत गया। पहले हाय तो बोलो!',
     },
   },
   {
@@ -99,7 +107,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '지금 하트 누를까 말까 고민 중이죠? 그냥 눌러주면 안 돼요?',
       en: "Still hovering over the heart button? Just press it for me, won't you?",
       ja: '今ハート押そうか迷ってますよね？そのまま押しちゃだめですか？',
-      zh: '正在犹豫要不要点心心吧？就这样点下去不行吗？',
+      th: 'ตอนนี้กำลังลังเลว่าจะกดหัวใจดีไหมใช่ไหม กดให้เลยไม่ได้เหรอ',
+      hi: 'अभी सोच रहे हो ना दिल वाला बटन दबाऊँ या नहीं? बस दबा ही दो ना?',
     },
   },
   {
@@ -109,7 +118,8 @@ export const BIO_PHRASES: readonly BioPhrase[] = [
       ko: '저를 버리시려고요? 진짜로요?',
       en: "Wait — you're really going to swipe me away? Really?",
       ja: '私のこと、置いていっちゃうんですか？本当に？',
-      zh: '你真的要把我划掉吗？真的？',
+      th: 'จะปัดทิ้งฉันไปเลยเหรอ จริงๆ เหรอ',
+      hi: 'मुझे यूँ ही छोड़ दोगे? सच में?',
     },
   },
 ] as const;

@@ -1,19 +1,13 @@
+// Whitelisted spoken languages for launch (BCP-47 short codes). Drives both
+// profile language picker and matching preference picker. Note: this is the
+// set of *spoken languages a user can register on their profile*, not the
+// app UI locales (those are tracked separately in `src/i18n/locales/`).
+// Keep in sync with `haru_BE/src/schemas/profile.ts` `LANGUAGE_CODES`.
 export const SUPPORTED_LANGUAGES = [
   { code: 'ko', labelKey: 'languages.ko' },
-  { code: 'en', labelKey: 'languages.en' },
   { code: 'ja', labelKey: 'languages.ja' },
-  { code: 'zh', labelKey: 'languages.zh' },
-  { code: 'es', labelKey: 'languages.es' },
-  { code: 'fr', labelKey: 'languages.fr' },
-  { code: 'de', labelKey: 'languages.de' },
-  { code: 'it', labelKey: 'languages.it' },
-  { code: 'pt', labelKey: 'languages.pt' },
-  { code: 'ru', labelKey: 'languages.ru' },
-  { code: 'tr', labelKey: 'languages.tr' },
-  { code: 'vi', labelKey: 'languages.vi' },
+  { code: 'en', labelKey: 'languages.en' },
   { code: 'th', labelKey: 'languages.th' },
-  { code: 'tl', labelKey: 'languages.tl' },
-  { code: 'id', labelKey: 'languages.id' },
   { code: 'hi', labelKey: 'languages.hi' },
 ] as const;
 

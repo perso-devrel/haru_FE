@@ -277,25 +277,15 @@ export default {
 
   nationalities: {
     KR: 'South Korea',
-    US: 'United States',
     JP: 'Japan',
-    CN: 'China',
-    ES: 'Spain',
+    US: 'United States',
     GB: 'United Kingdom',
     CA: 'Canada',
     AU: 'Australia',
-    FR: 'France',
-    DE: 'Germany',
-    IT: 'Italy',
-    VN: 'Vietnam',
+    NZ: 'New Zealand',
+    IE: 'Ireland',
     TH: 'Thailand',
-    PH: 'Philippines',
-    ID: 'Indonesia',
     IN: 'India',
-    BR: 'Brazil',
-    MX: 'Mexico',
-    RU: 'Russia',
-    TR: 'Türkiye',
   },
 
   interestSections: {

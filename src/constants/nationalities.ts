@@ -1,24 +1,18 @@
+// Whitelisted nationalities for launch (ISO-3166-1 alpha-2). Locked at
+// launch policy review — keep in sync with `haru_BE/src/schemas/profile.ts`
+// `NATIONALITY_CODES`. Any change requires product + i18n + safety sign-off.
+// Order here drives the picker order in setup/edit-profile/preferences.
 export const SUPPORTED_NATIONALITIES = [
   { code: 'KR', labelKey: 'nationalities.KR' },
-  { code: 'US', labelKey: 'nationalities.US' },
   { code: 'JP', labelKey: 'nationalities.JP' },
-  { code: 'CN', labelKey: 'nationalities.CN' },
-  { code: 'ES', labelKey: 'nationalities.ES' },
+  { code: 'US', labelKey: 'nationalities.US' },
   { code: 'GB', labelKey: 'nationalities.GB' },
   { code: 'CA', labelKey: 'nationalities.CA' },
   { code: 'AU', labelKey: 'nationalities.AU' },
-  { code: 'FR', labelKey: 'nationalities.FR' },
-  { code: 'DE', labelKey: 'nationalities.DE' },
-  { code: 'IT', labelKey: 'nationalities.IT' },
-  { code: 'VN', labelKey: 'nationalities.VN' },
+  { code: 'NZ', labelKey: 'nationalities.NZ' },
+  { code: 'IE', labelKey: 'nationalities.IE' },
   { code: 'TH', labelKey: 'nationalities.TH' },
-  { code: 'PH', labelKey: 'nationalities.PH' },
-  { code: 'ID', labelKey: 'nationalities.ID' },
   { code: 'IN', labelKey: 'nationalities.IN' },
-  { code: 'BR', labelKey: 'nationalities.BR' },
-  { code: 'MX', labelKey: 'nationalities.MX' },
-  { code: 'RU', labelKey: 'nationalities.RU' },
-  { code: 'TR', labelKey: 'nationalities.TR' },
 ] as const;
 
 export type NationalityCode = typeof SUPPORTED_NATIONALITIES[number]['code'];

@@ -60,6 +60,15 @@ export function useVoiceCloneRecorder() {
     setRecordedDurationMs(lastDuration);
     const uri = recorder.uri;
     if (uri) setRecordingUri(uri);
+    // chat-audio-mid-session-playback fix: 녹음을 끝내면 audio session 을 즉시
+    // playback-only 로 원복한다. start() 가 `allowsRecording: true` (iOS 에서
+    // `playAndRecord` category) 로 한 번 바꾼 뒤 복원하지 않으면, 이후 채팅방
+    // 에서 새 메시지 셀이 mount 될 때 새로 attach 되는 AVPlayer 의 buffer
+    // fill 이 record-capable session 상태에서 멈춰 isLoaded:false 에 갇히는
+    // 케이스가 관측됐다. 부팅 시 한 번 (app/_layout.tsx) 같은 모드를 설정해
+    // 두긴 했지만, 녹음 후 즉시 원복하면 같은 세션 내 race 도 닫힌다. 실패는
+    // 무시 — 다음 녹음 시작 시 start() 가 다시 record 모드로 전환한다.
+    setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false }).catch(() => {});
   }, [recorder, recorderState.durationMillis]);
 
   // Auto-stop once the recording reaches MAX_DURATION_MS so the duration-bar

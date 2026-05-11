@@ -228,29 +228,36 @@ export interface SendMessageRequest {
   emotion?: Emotion;
 }
 
-// mig 014 match-roundtrip-realtime: POST /api/matches/:matchId/messages 응답에
-// 동봉되는 match-level snapshot. BE 트리거가 INSERT 직후 동기 갱신한 matches 행을
-// 즉시 SELECT 해서 만든 nested DTO — FE useChat 이 send 응답 한 번으로
-// roundTrips/photoUnlocked 를 시드한다.
+// chat-audio-async-insert sprint: send 응답에서 match_after 제거.
+//
+// BE 가 더 이상 mid-session UPDATE 패턴을 쓰지 않음 — POST 응답 시점에 INSERT
+// 가 일어나지 않거나(voice clone 보유자: stub 202) 일어나도 14c 트리거 결과를
+// 동봉하던 SELECT 는 제거되었다. FE 는 realtime matches UPDATE 채널 (useChat
+// onMatchUpdate / useMatches subscribeToAllMatchUpdates) 을 단일 진실원으로
+// 사용하며, 자기 자신이 보낸 메시지로 인한 게이지 갱신도 같은 채널로 수신.
+// 친밀도 게이지 갱신 시점은 INSERT 직후 → POST 응답 후 5~10초 지연 (TTS 시간).
+//
+// MatchAfter 인터페이스는 useChat 내부의 photoUnlocked 시드 로직에서 계속
+// 사용하므로 정의는 유지하되, SendMessageResponse 의 nested 필드는 삭제.
 export interface MatchAfter {
   round_trip_count: number;
   main_photo_unlocked: boolean;
   all_photos_unlocked: boolean;
 }
 
-// POST /api/matches/:matchId/messages 응답 타입. 기존 Message 필드를 모두 포함하고
-// match_after 를 추가. 구버전 BE 호환을 위해 match_after 는 optional.
-export interface SendMessageResponse extends Message {
-  match_after?: MatchAfter;
-}
+// POST /api/matches/:matchId/messages 응답 타입. voice clone 보유 발신자는
+// 202 stub 응답 (audio_status='pending', id=확정된 UUID — realtime INSERT 가
+// 같은 id 로 도착 → FE 가 replace), 보유 안 한 발신자는 201 동기 INSERT 응답.
+// 어느 쪽이든 Message 필드 구조는 동일.
+export type SendMessageResponse = Message;
 
 export interface ReadResponse {
   read_count: number;
 }
 
-export interface RetryResponse {
-  status: 'processing';
-}
+// chat-audio-async-insert sprint: retry 엔드포인트 제거. 실패 메시지는
+// audio_url=null, audio_status='failed' 로 INSERT 되어 텍스트는 전달되며,
+// 사용자는 동일 텍스트로 새 메시지를 보내 재시도한다.
 
 // === Block ===
 export interface BlockRequest {

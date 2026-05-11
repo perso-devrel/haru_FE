@@ -116,16 +116,25 @@ export function useChat(matchId: string) {
   const send = useCallback(async (text: string, emotion?: Emotion) => {
     setError(null);
     try {
+      // chat-audio-async-insert sprint: 응답은 두 경로.
+      //   * voice clone 없는 발신자 → 201 동기 INSERT 된 진짜 Message.
+      //     realtime INSERT 도 같은 id 로 도착하지만 setMessages 의
+      //     dedup-by-id 가 노출 중복을 막는다.
+      //   * voice clone 보유 발신자 → 202 stub Message (audio_status='pending',
+      //     id 는 BE 가 미리 확정한 UUID — TTS 완료 후 realtime INSERT 가
+      //     같은 id 로 도착하면 그 row 가 stub 을 대체하도록 upsert).
+      // 어느 쪽이든 매 메시지 1회 mount 만 보장 → expo-audio 의 mid-session
+      // resource 회수 트리거 회피.
       const msg = await messageService.sendMessage(matchId, text, emotion);
       setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev;
+        const idx = prev.findIndex((m) => m.id === msg.id);
+        if (idx >= 0) {
+          const next = prev.slice();
+          next[idx] = msg;
+          return next;
+        }
         return [...prev, msg];
       });
-      // mig 014: BE trigger 가 갱신한 matches snapshot 을 응답에서 즉시 시드.
-      // 구버전 BE 응답은 match_after 가 undefined — 그 경우 기존 state 유지.
-      if (msg.match_after) {
-        setMatchAfter(msg.match_after);
-      }
       return msg;
     } catch (e) {
       setError(describeError(e));
@@ -141,14 +150,9 @@ export function useChat(matchId: string) {
     }
   }, [matchId]);
 
-  const retryAudio = useCallback(async (messageId: string) => {
-    await messageService.retryAudio(messageId);
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === messageId ? { ...m, audio_status: 'processing' as const } : m,
-      ),
-    );
-  }, []);
+  // chat-audio-async-insert sprint: retryAudio 제거. 실패한 메시지는
+  // audio_url=null, audio_status='failed' 로 영구 저장되며 사용자는 동일 텍스트로
+  // 새 메시지를 보내 재시도한다.
 
   // Subscribe to Realtime + reconnect on foreground or after error
   useEffect(() => {
@@ -169,13 +173,30 @@ export function useChat(matchId: string) {
         matchId,
         (newMsg) => {
           if (cancelled) return;
+          // chat-audio-async-insert sprint: 두 가지 INSERT 경로 reconcile.
+          //   * 본인 발신 (voice clone 보유): send() 가 stub(audio_status='pending')
+          //     을 먼저 넣었고, BE 가 TTS 완료 후 같은 id 로 INSERT → 같은 id 의
+          //     row 를 ready 상태 row 로 교체. expo-audio 입장에서는 'ready' +
+          //     audio_url 조합으로 첫 mount 가 일어남 → cold-start path 만 거침.
+          //   * 본인 발신 (voice clone 없음): send() 가 동기 INSERT 응답으로 이미
+          //     ready row 를 추가. realtime INSERT 가 같은 id 로 도착하면 무변경.
+          //   * 상대방 발신: stub 없음 → 신규 append.
           setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            const idx = prev.findIndex((m) => m.id === newMsg.id);
+            if (idx >= 0) {
+              const next = prev.slice();
+              next[idx] = newMsg;
+              return next;
+            }
             return [...prev, newMsg];
           });
         },
         (updatedMsg) => {
           if (cancelled) return;
+          // chat-audio-async-insert sprint: audio_status 전이 UPDATE 는 더 이상
+          // 발생하지 않는다 — 새 모델에서 INSERT 가 곧 최종 상태. 본 핸들러는
+          // 이제 read_at 같은 부수 컬럼 UPDATE 만 처리한다 (recipient 가 읽음
+          // 처리할 때 매치 전체 messages 일괄 UPDATE).
           setMessages((prev) =>
             prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)),
           );
@@ -259,6 +280,5 @@ export function useChat(matchId: string) {
     loadOlder,
     send,
     markRead,
-    retryAudio,
   };
 }

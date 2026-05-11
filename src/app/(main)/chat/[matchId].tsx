@@ -179,7 +179,6 @@ export default function ChatScreen() {
     loadOlder,
     send,
     markRead,
-    retryAudio,
   } = useChat(matchId!);
 
   // mig 014 match-roundtrip-realtime: 클라이언트 윈도우 재계산 제거.
@@ -203,6 +202,11 @@ export default function ChatScreen() {
   const [selectedEmotion, setSelectedEmotion] = useState<Emotion>(DEFAULT_EMOTION);
   const [emotionPickerOpen, setEmotionPickerOpen] = useState(false);
   const [inputDockHeight, setInputDockHeight] = useState(0);
+  // Drives the multi-line growth of the composer wrap. TextInput reports its
+  // intrinsic content height via onContentSizeChange; we clamp the wrap to
+  // [44, 110] (single-line baseline → ~4-line cap) so the input visibly grows
+  // as the user keeps typing past one line, instead of staying pinned to 44h.
+  const [inputContentHeight, setInputContentHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   // Track previous list state so we only auto-scroll when a NEW message is
   // appended at the end — not when older messages are prepended via loadOlder.
@@ -419,7 +423,6 @@ export default function ChatScreen() {
             if (partnerDeleted || matchUnmatched) return;
             setPartnerModalOpen(true);
           }}
-          onRetryAudio={retryAudio}
         />
         {showDateSeparator && (
           <View style={styles.dateSeparator}>
@@ -478,6 +481,14 @@ export default function ChatScreen() {
           ref={flatListRef}
           data={inverseMessages}
           renderItem={renderMessage}
+          // chat-audio-async-insert sprint: keyExtractor 는 item.id 단순 형태로
+          // 복귀. BE 가 mid-session UPDATE 패턴을 폐기하면서 audio_status 전이가
+          // 같은 row 위에서 일어나지 않게 됨 — voice clone 발신자의 stub(pending)
+          // 은 BE 가 INSERT 한 row(ready, audio_url) 로 useChat 에서 같은 id 로
+          // **upsert** 되며, 그 시점에 ChatBubble 내부에서 `audio_url` key 를 가진
+          // AudioPlayer 가 처음 mount → expo-audio cold-start path. 셀 자체를
+          // fresh re-mount 시킬 필요가 없으므로 무관한 UPDATE(read_at 등) 에 대한
+          // 불필요한 unmount 비용도 사라진다.
           keyExtractor={(item) => item.id}
           inverted
           onEndReached={hasMore ? loadOlder : undefined}
@@ -597,7 +608,23 @@ export default function ChatScreen() {
                     quirk), so an absolutely-positioned Text inside a
                     relative wrapper guarantees the pixel font. Same
                     pattern as FormField / BioPhrasePicker. */}
-                <View style={styles.inputWrap}>
+                <View
+                  style={[
+                    styles.inputWrap,
+                    // 44 baseline keeps the single-line height pinned (avoids
+                    // the 1-2px first-character bounce that minHeight alone
+                    // produced). Once intrinsic content exceeds the inner
+                    // 20-px slot, the wrap grows in lockstep with the text
+                    // up to a 110-px ceiling (~4 lines), then internal
+                    // scrolling takes over.
+                    {
+                      height: Math.max(
+                        44,
+                        Math.min(110, inputContentHeight + 24),
+                      ),
+                    },
+                  ]}
+                >
                   <TextInput
                     style={styles.input}
                     value={text}
@@ -607,6 +634,9 @@ export default function ChatScreen() {
                       // so the message doesn't linger past the correction.
                       if (composerError) setComposerError(null);
                     }}
+                    onContentSizeChange={(e) =>
+                      setInputContentHeight(e.nativeEvent.contentSize.height)
+                    }
                     // Match the validator's 500-char rule at the input layer so
                     // typing/pasting beyond the cap is dropped natively (RN
                     // truncates pasted strings to maxLength). The validator's
@@ -840,19 +870,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     letterSpacing: 0.2,
   },
-  // The wrap carries the bordered "input box" look so its outer height is
-  // exactly 44h at min content — matching EmotionPicker (44h) and sendShell
-  // (44x44) for clean baseline alignment under inputBar's flex-end.
-  // Single-line height is locked: minHeight 44 alone leaves room for RN's
-  // 1–2px content-height jitter when the first character lands, which
-  // reads as a visible bounce next to the fixed 44h side controls. We
-  // pin alignSelf: 'flex-end' so even if content does swell internally
-  // (e.g. multiline overflow → maxHeight 110), the bottom edge stays
-  // glued to the side buttons rather than the row growing upward.
+  // The wrap carries the bordered "input box" look. Its height is driven
+  // inline from inputContentHeight (clamped to [44, 110]) so it grows as
+  // the user types past one line — single-line stays pinned at 44h to
+  // avoid RN's 1–2px first-character jitter, then expands in lockstep
+  // with the wrapped content. alignSelf: 'flex-end' keeps the bottom edge
+  // glued to the 44h side controls so the row grows upward, not downward.
   inputWrap: {
     flex: 1,
-    height: 44,
-    maxHeight: 110,
     borderRadius: 22,
     paddingHorizontal: 18,
     paddingVertical: 12,

@@ -34,6 +34,17 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export function AudioPlayer({ url, compact = false, showProgressBar = false, showBar = false, tintColor = colors.primary }: AudioPlayerProps) {
   const { t } = useTranslation();
+  // chat-audio-async-insert sprint: 모든 메시지가 cold-start path 만 거치도록
+  // BE/useChat 구조가 바뀌었다 (POST 응답이 stub 이거나 동기 INSERT 결과 → 같은
+  // id 로 realtime INSERT 가 도착해 upsert → AudioPlayer 가 처음 mount 되는
+  // 시점에 항상 audio_status='ready' + audio_url). expo-audio 의 mid-session
+  // mount → resource auto-evict 트리거 자체가 없어지므로 본 컴포넌트는 단순한
+  // `useAudioPlayer(url)` 만으로 충분. fix v3 (toggle 안 replace), fix v4
+  // (keepAudioSessionActive: true), 진단 로그는 모두 제거.
+  //
+  // 부팅 시 audio session 을 playback-only + playsInSilentMode 로 명시 고정한
+  // 코드는 app/_layout.tsx 에 그대로 유지 (녹음 직후 잔여 session 상태 대비
+  // 무해한 best practice).
   const player = useAudioPlayer(url);
   const status = useAudioPlayerStatus(player);
   const isPlaying = status.playing;
@@ -44,12 +55,12 @@ export function AudioPlayer({ url, compact = false, showProgressBar = false, sho
   const toggle = useCallback(() => {
     if (isPlaying) {
       player.pause();
-    } else {
-      if (duration > 0 && currentTime >= duration) {
-        player.seekTo(0);
-      }
-      player.play();
+      return;
     }
+    if (duration > 0 && currentTime >= duration) {
+      player.seekTo(0);
+    }
+    player.play();
   }, [player, isPlaying, duration, currentTime]);
 
   if (showBar) {

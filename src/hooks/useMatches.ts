@@ -144,7 +144,19 @@ export function useMatches() {
     }
   }, [data]);
 
-  const matches = data ? [...data, ...extraPages] : [];
+  // BE 는 페이지네이션 커서 호환을 위해 matches.created_at DESC 로 내려준다.
+  // 화면 정렬은 "가장 최근 메시지를 주고받은 채팅" 기준이어야 하므로 표시
+  // 직전에 last_message.created_at 으로 재정렬한다. 메시지가 아직 없는 매치
+  // (last_message=null) 는 매치 생성 시각으로 폴백 — 신규 매치가 상단에 노출.
+  // dataRef / extraPagesRef 는 BE 순서를 그대로 유지해 loadMore 의 tail.created_at
+  // 커서가 BE 정렬 기준과 어긋나지 않도록 한다.
+  const matches = data
+    ? [...data, ...extraPages].sort((a, b) => {
+        const aTime = a.last_message?.created_at ?? a.created_at;
+        const bTime = b.last_message?.created_at ?? b.created_at;
+        return bTime.localeCompare(aTime);
+      })
+    : [];
 
   const loadMatches = useCallback(async () => {
     await mutate();

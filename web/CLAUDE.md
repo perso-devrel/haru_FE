@@ -159,3 +159,4 @@ haru_FE/web/
 | 날짜 | 변경 | 사유 |
 | --- | --- | --- |
 | 2026-05-08 | 초기 가이드라인 작성 | 모노레포 랜딩페이지 신설 (Next.js 15 + ko/en/ja, 1차: 히어로+차별점+CTA) |
+| 2026-05-13 | dev/QA 어드민 대시보드 별 워크스페이스(`haru_FE/admin/`)로 분리 | 출시 시 통째로 disable 가능하게. web/ 은 마케팅 랜딩 전용으로 유지. 이전 `app/[locale]/admin/` 라우트 삭제 — 동일 URL 은 이제 404. 자세한 admin 정책은 `haru_FE/admin/CLAUDE.md` 참조 |

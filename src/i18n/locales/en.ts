@@ -127,6 +127,15 @@ export default {
       "Hang tight — once your voice is ready you'll be able to start discovering.",
   },
 
+  likes: {
+    headerTitle: 'Likes Received',
+    empty: {
+      title: "You haven't received any likes yet",
+      text: 'Meet more people in Discover.',
+      cta: 'Start discovering',
+    },
+  },
+
   matches: {
     noMatches: 'No matches yet',
     goToDiscover: 'Start discovering',
@@ -527,6 +536,7 @@ export default {
 
   tabs: {
     discover: 'Discover',
+    likes: 'Likes',
     matches: 'Chats',
     profile: 'My Profile',
   },

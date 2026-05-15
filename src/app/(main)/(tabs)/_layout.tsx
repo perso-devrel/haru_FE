@@ -60,9 +60,13 @@ export default function TabLayout() {
           borderTopColor: colors.borderSoft,
           borderTopWidth: 0.5,
           backgroundColor: colors.card,
-          height: 60 + bottomInset,
+          // 가시 영역 = 총 height - bottomInset (홈 인디케이터 safe area).
+          // paddingTop / paddingBottom 가 가시 영역 안에서 대칭(8/8)이어야 아이콘+레이블이
+          // 시각적으로 중앙 정렬됨. 이전 (paddingBottom: bottomInset) 은 가시 영역 안에서
+          // 하단 패딩 0 이라 콘텐츠가 위로 치우쳐 보였음.
+          height: 60 + 8 + bottomInset,
           paddingTop: 8,
-          paddingBottom: bottomInset,
+          paddingBottom: 8 + bottomInset,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.medium,
@@ -83,6 +87,16 @@ export default function TabLayout() {
           headerTitle: () => <HeaderTitle icon="compass" label={t('tabs.discover')} />,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'compass' : 'compass-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="likes"
+        options={{
+          title: t('tabs.likes'),
+          headerTitle: () => <HeaderTitle icon="heart" label={t('likes.headerTitle')} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={size} color={color} />
           ),
         }}
       />

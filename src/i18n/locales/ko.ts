@@ -126,6 +126,15 @@ export default {
         voiceProcessingHint: "잠시만 기다려주세요. 음성 생성이 끝나면 자동으로 탐색을 시작할 수 있어요.",
     },
 
+    likes: {
+        headerTitle: "받은 좋아요",
+        empty: {
+            title: "아직 받은 좋아요가 없어요",
+            text: "디스커버에서 더 많은 사람을 만나보세요.",
+            cta: "탐색하러 가기",
+        },
+    },
+
     matches: {
         noMatches: "매칭된 상대가 없습니다",
         goToDiscover: "지금 탐색하기",
@@ -529,6 +538,7 @@ export default {
 
     tabs: {
         discover: "탐색",
+        likes: "좋아요",
         matches: "채팅",
         profile: "내 프로필",
     },

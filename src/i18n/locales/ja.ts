@@ -126,6 +126,15 @@ export default {
         voiceProcessingHint: "少々お待ちください。生成が完了すると自動的に探索を始められます。",
     },
 
+    likes: {
+        headerTitle: "もらったいいね",
+        empty: {
+            title: "まだ「いいね」を受け取っていません",
+            text: "ディスカバーでもっと多くの人に出会ってみましょう。",
+            cta: "探しに行く",
+        },
+    },
+
     matches: {
         noMatches: "マッチした相手がいません",
         goToDiscover: "今すぐ探す",
@@ -528,6 +537,7 @@ export default {
 
     tabs: {
         discover: "探す",
+        likes: "いいね",
         matches: "チャット",
         profile: "マイプロフィール",
     },

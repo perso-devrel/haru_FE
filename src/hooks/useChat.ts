@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { matchesKey } from '@/lib/swr';
 import { computeBackoffDelay } from '@/utils/backoff';
 import { describeError } from '@/utils/errors';
+import { ApiRequestError } from '@/services/api';
 import type { Emotion, MatchAfter, MatchListItem, Message } from '@/types';
 
 // mig 014 match-roundtrip-realtime: useChat 이 노출하는 BE-sourced
@@ -137,6 +138,13 @@ export function useChat(matchId: string) {
       });
       return msg;
     } catch (e) {
+      // message-moderation-v1 (PR1): 사전 키워드 차단(422 message_blocked)은
+      // 인라인 error 영역을 더럽히지 않고 호출처(chat/[matchId]::handleSend)
+      // 가 토스트로 직접 노출. throw 는 유지해 호출처가 catch 분기에서
+      // ApiRequestError.code 로 매칭한다. 그 외 에러는 기존 동선 유지.
+      if (e instanceof ApiRequestError && e.code === 'message_blocked') {
+        throw e;
+      }
       setError(describeError(e));
       throw e;
     }

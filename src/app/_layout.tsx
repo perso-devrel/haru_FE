@@ -10,18 +10,36 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import { setAudioModeAsync } from 'expo-audio';
 import { useAuthStore } from '@/stores/authStore';
-import { registerOnSessionExpired } from '@/services/api';
+import { registerOnSessionExpired, registerOnAccountFrozen } from '@/services/api';
 import { requestAndRegisterPushToken } from '@/hooks/usePushToken';
 import { getActiveChatMatchId } from '@/lib/activeChat';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { AlertHost } from '@/components/ui/AlertHost';
+import { showAlert } from '@/stores/alertStore';
 import { SWRConfigProvider } from '@/lib/swr';
 import { PRETENDARD_ASSETS, fonts } from '@/constants/fonts';
-import '@/i18n';
+import i18n from '@/i18n';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 registerOnSessionExpired(() => useAuthStore.getState().logout());
+
+// message-moderation-v1 (PR2): 누적 신고 자동 freeze 가 발동된 사용자가 mutating
+// 라우트 호출 시 BE freezeGuard 가 403 + code='account_frozen' 응답 → api.ts 의
+// 글로벌 분기가 본 핸들러 호출. 모달 1회 (CS 안내) + 로그아웃.
+//
+// 침묵 통지 정책 (architect plan 2.2 / safety 05a 항목 2): 외부 통지(push/email/SMS)
+// 는 미발송 — 가해 사용자에게 회피 시점 정보를 주지 않고, 다음 mutating 호출 시
+// 앱 내 모달 1회만 노출. freeze 사유/카테고리는 미노출 (악성 회피 학습 차단) +
+// CS 채널로 문의 안내. CS 이메일 채널 확보는 출시 전 카피 보강 (legal_drafts.md TODO).
+registerOnAccountFrozen(() => {
+  showAlert({
+    variant: 'info',
+    title: i18n.t('moderation.frozen.title') as string,
+    message: i18n.t('moderation.frozen.notice') as string,
+    onConfirm: () => useAuthStore.getState().logout(),
+  });
+});
 
 // push-notifications sprint: foreground 알림 표시 정책. 앱이 열려 있는 상태에서도
 // OS 트레이 알림을 띄운다.

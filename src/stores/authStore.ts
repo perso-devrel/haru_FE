@@ -4,6 +4,7 @@ import {
   clearTokens,
   getAccessToken,
   getRefreshToken,
+  resetAccountFrozenState,
   ApiRequestError,
 } from '@/services/api';
 import {
@@ -83,6 +84,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // 로그아웃 흐름은 차단하지 않음 (unregisterCurrentPushToken 내부 silent).
     await unregisterCurrentPushToken();
     await clearTokens();
+    // message-moderation-v1 follow-up: account_frozen 모달 디바운스 reset —
+    // 미수행 시 freeze 자동 로그아웃 후 재로그인 시 module-level 플래그가 잔존해
+    // 다음 403 응답에서 모달/로그아웃 미발동 회귀 (2026-05-18 dev 환경 표면화).
+    resetAccountFrozenState();
     set({
       isAuthenticated: false,
       userId: null,

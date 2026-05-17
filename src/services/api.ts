@@ -47,6 +47,26 @@ export function registerOnSessionExpired(cb: () => void) {
   onSessionExpired = cb;
 }
 
+// message-moderation-v1 (PR2): BE freezeGuard 가 403 + code='account_frozen' 응답
+// 시 글로벌 모달 1회 + 로그아웃 트리거. onSessionExpired 와 동일 패턴 — 호출처는
+// _layout.tsx 에서 모달 + logout 흐름 등록. 본 핸들러는 디바운스되어 같은 freeze
+// 응답이 여러 라우트에서 동시에 도착해도 모달은 한 번만 노출된다.
+let onAccountFrozen: (() => void) | null = null;
+let accountFrozenFired = false;
+export function registerOnAccountFrozen(cb: () => void) {
+  onAccountFrozen = cb;
+}
+// 디바운스 reset — logout 흐름에서 호출해 다음 로그인 세션이 freeze 모달을
+// 다시 받을 수 있게 한다. 미호출 시 한 번 freeze 모달이 뜬 디바이스는 재로그인
+// 후에도 module-level `accountFrozenFired=true` 가 잔존해 다음 403 응답에서
+// 모달/로그아웃 트리거가 silent skip 되는 회귀 발생 (2026-05-18 dev 환경 표면화).
+// refresh 토큰 갱신은 같은 세션 연속이므로 saveTokens 안에서 reset 하지 않는다.
+export function resetAccountFrozenState() {
+  accountFrozenFired = false;
+}
+// 테스트 격리용 — 기존 이름 호환 유지.
+export const __resetAccountFrozenDebounce = resetAccountFrozenState;
+
 export async function getAccessToken(): Promise<string | null> {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
@@ -153,6 +173,19 @@ class ApiClient {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+
+      // message-moderation-v1 (PR2): freezeGuard 글로벌 분기. 401 의
+      // onSessionExpired 패턴과 동일하게, 핸들러 호출 후 ApiRequestError 도
+      // 일관성 있게 throw (호출처가 추가 처리할 수 있게). accountFrozenFired
+      // 가드로 같은 freeze 응답이 여러 라우트에서 동시에 도착해도 핸들러는
+      // 한 번만 발화 — 모달 중복 노출 회피.
+      if (res.status === 403 && error?.code === 'account_frozen') {
+        if (!accountFrozenFired) {
+          accountFrozenFired = true;
+          onAccountFrozen?.();
+        }
+      }
+
       throw new ApiRequestError(
         res.status,
         error.error ?? 'Unknown error',

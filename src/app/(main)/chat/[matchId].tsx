@@ -36,6 +36,7 @@ import { ProfilePhotoGallery } from '@/components/ui/ProfilePhotoGallery';
 import { useChat } from '@/hooks/useChat';
 import { setActiveChatMatchId } from '@/lib/activeChat';
 import { showAlert } from '@/stores/alertStore';
+import { ApiRequestError } from '@/services/api';
 import { colors, gradients, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { DEFAULT_EMOTION } from '@/constants/emotions';
@@ -322,9 +323,24 @@ export default function ChatScreen() {
     try {
       await send(trimmed, emotionForSend);
     } catch (e: any) {
-      // Network / send-side failures surface through the unified alert host
-      // (client-side rule violations are handled inline upstream).
-      showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+      // message-moderation-v1 (PR1): BE 422 + code='message_blocked' →
+      // 안전 카피 토스트 + 입력 텍스트 복원 (재편집 가능). 본인 메시지 버퍼에는
+      // 임시 row 가 추가되지 않으므로 화면 잔존 회피. 카테고리/매칭 토큰은
+      // 응답에 없어 우회 학습 차단.
+      if (e instanceof ApiRequestError && e.code === 'message_blocked') {
+        showAlert({
+          variant: 'info',
+          title: t('moderation.blocked.title'),
+          message: t('moderation.blocked.toast'),
+        });
+        setText(trimmed);
+        // 감정도 복원 — 사용자가 같은 메시지를 살짝 수정해 재송신할 가능성.
+        setSelectedEmotion(emotionForSend);
+      } else {
+        // Network / send-side failures surface through the unified alert host
+        // (client-side rule violations are handled inline upstream).
+        showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+      }
     } finally {
       setSending(false);
     }

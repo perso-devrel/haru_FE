@@ -104,6 +104,9 @@ export default function LoginScreen() {
     } catch (e: any) {
       const { statusCodes } = await import('@react-native-google-signin/google-signin');
       if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
+      // message-moderation-v1 follow-up: BE 가 403 account_frozen 반환하면
+      // api.ts 의 글로벌 핸들러가 이미 모달 + logout 처리 — 중복 alert 회피.
+      if (e instanceof ApiRequestError && e.code === 'account_frozen') return;
       showAlert({
         variant: 'error',
         title: t('auth.loginFailed'),
@@ -135,6 +138,10 @@ export default function LoginScreen() {
           return true;
         case 'PASSWORD_FORMAT':
           setErrors({ email: null, password: t('validation.passwordFormat') });
+          return true;
+        // message-moderation-v1 follow-up: api.ts 글로벌 핸들러가 이미 모달
+        // + logout 처리. login 화면의 중복 alert 회피 위해 silent return.
+        case 'account_frozen':
           return true;
       }
     }

@@ -142,10 +142,10 @@ export default {
         startConversation: "会話を始めてみましょう！",
         actions: {
             mute: "通知をオフ",
+            unmute: "通知をオン",
             unmatch: "マッチ解除",
             report: "通報する",
             hide: "リストから削除",
-            muteComingSoon: "通知設定はまもなく追加されます。",
             unmatchConfirm: "{{name}}さんとのマッチを解除しますか？\n\nチャットがリストから消え、これ以上メッセージのやり取りができなくなります。",
             hideConfirm: "このチャットをリストから削除しますか？\n\n過去の会話を再び閲覧することはできなくなり、この操作は元に戻せません。",
         },
@@ -154,7 +154,8 @@ export default {
         },
         preview: {
             // read-at-removal-list-mask sprint: 相手の未試聴メッセージのマスキング。
-            newMessage: "新しいメッセージ",
+            // 数値は FE が前置するため、本 suffix は数字以降の部分のみ。
+            newMessagesSuffix: "件の新着メッセージ",
         },
         report: {
             title: "通報する",

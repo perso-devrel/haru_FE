@@ -192,6 +192,12 @@ export interface MatchListItem {
   // optional. Chat 화면이 클라이언트 윈도우 재계산(countRoundTrips) 대신
   // 이 값을 직접 소비한다.
   round_trip_count: number;
+  // mig 022: per-match 푸시 알림 옵트아웃 상태. 채팅 목록 long-press 액션시트의
+  // "알림 끄기/켜기" 토글이 이 값을 보고 라벨/아이콘을 분기. user_preferences.
+  // notify_messages 전역 토글과 AND 결합되어 어느 한 쪽 OFF 면 푸시 미발송.
+  // BE 가 mig 022 미적용 윈도우에서 응답하지 않을 수 있어 optional 로 두고,
+  // undefined 는 false (미음소거) 로 해석.
+  muted?: boolean;
 }
 
 // === Message ===

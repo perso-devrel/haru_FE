@@ -12,7 +12,7 @@ import { setAudioModeAsync } from 'expo-audio';
 import { useAuthStore } from '@/stores/authStore';
 import { registerOnSessionExpired, registerOnAccountFrozen } from '@/services/api';
 import { requestAndRegisterPushToken } from '@/hooks/usePushToken';
-import { getActiveChatMatchId } from '@/lib/activeChat';
+import { getActiveChatMatchId, isMatchesTabActive } from '@/lib/activeChat';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { AlertHost } from '@/components/ui/AlertHost';
 import { showAlert } from '@/stores/alertStore';
@@ -44,24 +44,31 @@ registerOnAccountFrozen(() => {
 // push-notifications sprint: foreground 알림 표시 정책. 앱이 열려 있는 상태에서도
 // OS 트레이 알림을 띄운다.
 //
-// 예외: 현재 사용자가 열어둔 채팅방과 동일한 match_id 의 message 알림은 trayed
-// 알림을 표시하지 않는다 (배너/사운드/리스트 모두 OFF). 이미 채팅창에서 메시지를
-// 실시간으로 보고 있으므로 OS 알림이 중복 신호가 되어 노이즈. 백그라운드/종료
-// 상태에서는 setNotificationHandler 가 호출되지 않고 OS 가 직접 처리하므로 영향
-// 없음 (앱이 백그라운드면 채팅창도 비활성 상태로 간주됨).
+// 예외 (모두 type='message' 푸시에만 적용 — type='match' 새 매치 알림은 항상 통과):
+//   (1) 현재 사용자가 열어둔 채팅방과 동일한 match_id 의 메시지: 채팅창에서
+//       실시간으로 보고 있으므로 OS 알림이 중복 신호.
+//   (2) 매치 목록(채팅 목록) 탭이 활성 상태: 새 메시지는 list realtime 으로 즉시
+//       반영되므로 OS 메시지 푸시는 중복 신호. 단, 새 매치 알림은 사용자가
+//       기대하는 ping 이므로 통과 — 매치 탭이 떠 있어도 트레이/배너/사운드 정상.
+//
+// 백그라운드/종료 상태에서는 setNotificationHandler 가 호출되지 않고 OS 가
+// 직접 처리하므로 영향 없음 (앱이 백그라운드면 어떤 탭이든 비활성 상태로 간주됨).
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data as
       | { type?: string; match_id?: string }
       | undefined;
+    const isMessage = data?.type === 'message';
     const inThisChat =
-      data?.type === 'message' &&
-      typeof data.match_id === 'string' &&
+      isMessage &&
+      typeof data?.match_id === 'string' &&
       data.match_id === getActiveChatMatchId();
+    const messageWhileInMatchesTab = isMessage && isMatchesTabActive();
+    const suppress = inThisChat || messageWhileInMatchesTab;
     return {
-      shouldShowBanner: !inThisChat,
-      shouldShowList: !inThisChat,
-      shouldPlaySound: !inThisChat,
+      shouldShowBanner: !suppress,
+      shouldShowList: !suppress,
+      shouldPlaySound: !suppress,
       shouldSetBadge: false,
     };
   },

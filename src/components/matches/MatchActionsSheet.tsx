@@ -46,6 +46,13 @@ interface MatchActionsSheetProps {
   //   * neither → active match: mute / report / unmatch.
   partnerDeleted?: boolean;
   isUnmatched?: boolean;
+  // mig 022: per-match 푸시 알림 옵트아웃 상태. true 면 시트 첫 항목이
+  // "알림 켜기 (notifications-outline)" 로, false/undefined 면 "알림 끄기
+  // (notifications-off-outline)" 로 분기. tombstone 인 경우 항목 자체가 미노출.
+  isMuted?: boolean;
+  // 알림 끄기/켜기 토글 콜백. 호출자가 옵티미스틱 업데이트 + BE 호출 + 실패
+  // 시 롤백/토스트를 책임진다. 본 시트는 onClose 후 콜백 1회 발화만 담당.
+  onToggleMute?: (nextMuted: boolean) => void;
   onClose: () => void;
   // Fired after a destructive action (unmatch/report/hide) resolves
   // successfully. Caller decides the follow-up — refresh a list, navigate
@@ -60,6 +67,8 @@ export function MatchActionsSheet({
   partnerName,
   partnerDeleted,
   isUnmatched,
+  isMuted,
+  onToggleMute,
   onClose,
   onResolved,
 }: MatchActionsSheetProps) {
@@ -83,13 +92,18 @@ export function MatchActionsSheet({
     setReportTarget(null);
   };
 
+  // mig 022: 시트의 첫 항목 토글. 시트는 onClose + 콜백 발화만 담당하고,
+  // 옵티미스틱 업데이트 + BE 호출 + 실패 시 롤백/토스트는 호출자(matches.tsx
+  // 의 useMatches.toggleMute)가 책임진다. matchId 가 없으면 (활성 매치 누락
+  // 가드) no-op.
   const handleMutePress = () => {
+    if (!matchId || !onToggleMute) {
+      onClose();
+      return;
+    }
+    const next = !isMuted;
     onClose();
-    showAlert({
-      variant: 'info',
-      title: t('matches.actions.mute'),
-      message: t('matches.actions.muteComingSoon'),
-    });
+    onToggleMute(next);
   };
 
   const handleReportPress = () => {
@@ -202,8 +216,14 @@ export function MatchActionsSheet({
                 style={({ pressed }) => [styles.sheetItem, pressed && styles.sheetItemPressed]}
                 onPress={handleMutePress}
               >
-                <Ionicons name="notifications-off-outline" size={20} color={colors.text} />
-                <Text style={styles.sheetItemText}>{t('matches.actions.mute')}</Text>
+                <Ionicons
+                  name={isMuted ? 'notifications-outline' : 'notifications-off-outline'}
+                  size={20}
+                  color={colors.text}
+                />
+                <Text style={styles.sheetItemText}>
+                  {t(isMuted ? 'matches.actions.unmute' : 'matches.actions.mute')}
+                </Text>
               </Pressable>
             )}
             {!partnerDeleted && (

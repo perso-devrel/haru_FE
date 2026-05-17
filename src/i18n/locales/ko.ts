@@ -142,10 +142,10 @@ export default {
         startConversation: "대화를 시작해보세요!",
         actions: {
             mute: "알림 끄기",
+            unmute: "알림 켜기",
             unmatch: "언매치",
             report: "신고하기",
             hide: "목록에서 삭제",
-            muteComingSoon: "알림 설정은 곧 추가됩니다.",
             unmatchConfirm: "{{name}}님과의 매치를 해제할까요?\n\n채팅이 내 목록에서 사라지고 더 이상 메시지를 주고받을 수 없게 돼요.",
             hideConfirm: "이 채팅을 목록에서 삭제할까요?\n\n옛 대화 내용을 다시 볼 수 없게 되며, 이 작업은 되돌릴 수 없습니다.",
         },
@@ -155,7 +155,8 @@ export default {
         preview: {
             // read-at-removal-list-mask sprint: 상대가 보낸 미청취 메시지 마스킹.
             // "음성을 들어야 안다" funnel 일관성 — 채팅 목록 카드에서도 본문 노출 차단.
-            newMessage: "새 메시지",
+            // 카운트 수치는 FE 가 앞에 prepend 하므로 본 suffix 는 숫자 다음 부분만.
+            newMessagesSuffix: "개의 새 메시지",
         },
         report: {
             title: "신고하기",

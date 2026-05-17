@@ -111,6 +111,10 @@ export default function ChatScreen() {
   // partnerDeleted also rewrites the header label to "탈퇴한 사용자".
   const [partnerDeleted, setPartnerDeleted] = useState(false);
   const [matchUnmatched, setMatchUnmatched] = useState(false);
+  // mig 022: 채팅 헤더 ⋯ 메뉴에서도 동일 MatchActionsSheet 를 쓰므로 muted
+  // 상태를 동기화해 토글 라벨/아이콘이 일치하도록 한다. matches list 응답에
+  // 이미 포함된 값을 그대로 사용 — 별도 fetch 없음.
+  const [muted, setMuted] = useState(false);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Photo-access unlock popup state. `unlockEvent` is null when there's no
@@ -147,6 +151,7 @@ export default function ChatScreen() {
         const unmatched = !!found?.unmatched_at;
         setPartnerDeleted(deleted);
         setMatchUnmatched(unmatched);
+        setMuted(!!found?.muted);
         if (deleted) {
           // Wipe any seeded partner state so the header doesn't briefly show
           // a stale name/photo from the navigation params before the FE
@@ -818,6 +823,21 @@ export default function ChatScreen() {
         }
         partnerDeleted={partnerDeleted}
         isUnmatched={matchUnmatched}
+        isMuted={muted}
+        onToggleMute={async (next) => {
+          if (!matchId) return;
+          // 옵티미스틱 + 실패 시 자동 롤백. matches list 의 useMatches.toggleMute
+          // 는 SWR 캐시 일관성까지 책임지지만 채팅 화면은 그 hook 을 쓰지 않으므로
+          // 여기서는 로컬 muted state 만 토글하고 BE 호출 — 다음 화면 진입 시
+          // matches list 가 본문을 재페치해 진실원에서 다시 가져온다.
+          setMuted(next);
+          try {
+            await matchService.setMatchMute(matchId, next);
+          } catch (e: any) {
+            setMuted(!next);
+            showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+          }
+        }}
         onClose={() => setMenuOpen(false)}
         onResolved={() => router.back()}
       />

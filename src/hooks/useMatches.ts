@@ -167,6 +167,41 @@ export function useMatches() {
     await mutate();
   }, [mutate]);
 
+  // mig 022: per-match 푸시 알림 옵트아웃 토글. SWR cache + locally-paginated
+  // tail 양쪽에 옵티미스틱 muted 갱신 후 BE 호출. 실패 시 동일 패치를 반대로
+  // 적용해 롤백 (사용자에게 비동기 실패는 토스트로만 노출 — 호출자가 catch).
+  const toggleMute = useCallback(
+    async (matchId: string, nextMuted: boolean) => {
+      const patch = (list: MatchListItem[]) => {
+        const idx = list.findIndex((m) => m.match_id === matchId);
+        if (idx === -1) return list;
+        if ((list[idx].muted ?? false) === nextMuted) return list;
+        const next = [...list];
+        next[idx] = { ...next[idx], muted: nextMuted };
+        return next;
+      };
+      mutate((prev) => patch(prev ?? []), { revalidate: false });
+      setExtraPages((prev) => patch(prev));
+      try {
+        await matchService.setMatchMute(matchId, nextMuted);
+      } catch (e) {
+        // 롤백 — BE 호출 실패 시 옵티미스틱 변경을 되돌린다.
+        const revert = (list: MatchListItem[]) => {
+          const idx = list.findIndex((m) => m.match_id === matchId);
+          if (idx === -1) return list;
+          if ((list[idx].muted ?? false) !== nextMuted) return list;
+          const next = [...list];
+          next[idx] = { ...next[idx], muted: !nextMuted };
+          return next;
+        };
+        mutate((prev) => revert(prev ?? []), { revalidate: false });
+        setExtraPages((prev) => revert(prev));
+        throw e;
+      }
+    },
+    [mutate],
+  );
+
   const loadMore = useCallback(async () => {
     if (loadingMore.current || !hasMore) return;
     loadingMore.current = true;
@@ -338,5 +373,5 @@ export function useMatches() {
 
   const error = swrError ? (swrError as Error).message : loadMoreError;
 
-  return { matches, loading: isValidating, hasMore, error, loadMatches, loadMore };
+  return { matches, loading: isValidating, hasMore, error, loadMatches, loadMore, toggleMute };
 }

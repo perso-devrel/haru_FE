@@ -143,10 +143,10 @@ export default {
     startConversation: 'Start a conversation!',
     actions: {
       mute: 'Mute notifications',
+      unmute: 'Unmute notifications',
       unmatch: 'Unmatch',
       report: 'Report',
       hide: 'Remove from list',
-      muteComingSoon: 'Notification settings coming soon.',
       unmatchConfirm: "Unmatch {{name}}?\n\nThe chat will disappear from your list and you will no longer be able to exchange messages.",
       hideConfirm: 'Remove this chat from your list?\n\nYou will no longer be able to revisit the past conversation, and this cannot be undone.',
     },
@@ -155,7 +155,8 @@ export default {
     },
     preview: {
       // read-at-removal-list-mask sprint: masked preview for unheard partner messages.
-      newMessage: 'New message',
+      // Numeric count is prepended by FE — leading space keeps "{n} new messages" formatting.
+      newMessagesSuffix: ' new messages',
     },
     report: {
       title: 'Report',

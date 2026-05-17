@@ -1,8 +1,8 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { ProfilePhoto } from '@/components/ui/ProfilePhoto';
-import { colors, gradients, radii, shadows } from '@/constants/colors';
+import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { formatRelativeTime } from '@/utils/age';
 import type { MatchListItem } from '@/types';
@@ -37,7 +37,8 @@ export function MatchItem({ item, onPress, onLongPress }: MatchItemProps) {
   //   4. 상대 발신 + audio_status != 'ready' → startConversation (defense-in-depth;
   //      BE v3 RPC 가 이미 last_message 후보에서 제외)
   //   5. 상대 발신 + 청취 완료 → 원문 (현행 유지)
-  //   6. 상대 발신 + 미청취 → "새 메시지" 마스킹
+  //   6. 상대 발신 + 미청취 → "새 메시지" 마스킹 (단, hasUnread 일 경우 아래
+  //      카운트 표시 분기가 우선 적용)
   //
   // viewerId 출처: partner.id 비교로 prop drilling 회피 (plan §3.7 옵션 B).
   // partner null 시 isFromMe=false 로 fallback — last_message 가 있다면 상대 발신
@@ -48,7 +49,6 @@ export function MatchItem({ item, onPress, onLongPress }: MatchItemProps) {
   const isListened = !!lastMessage?.listened_at;
 
   let lastMessageText: string;
-  let isMaskedPreview = false;
   if (isTombstone) {
     lastMessageText = isUnmatched ? t('matches.tombstone.unmatched') : '';
   } else if (!lastMessage) {
@@ -62,12 +62,16 @@ export function MatchItem({ item, onPress, onLongPress }: MatchItemProps) {
     // 상대 발신이지만 비정상 status — BE v3 가 last_message 후보에서 제외하므로
     // 실제로 도달하기 어려운 분기. "비어 있는 카드" 회피용 폴백.
     lastMessageText = t('matches.startConversation');
-  } else if (isListened) {
-    lastMessageText = lastMessage.original_text ?? '';
   } else {
-    lastMessageText = t('matches.preview.newMessage');
-    isMaskedPreview = true;
+    // 상대 발신 + ready. 청취 완료 → 원문, 미청취 → 카운트 표시 분기가 처리.
+    lastMessageText = isListened ? (lastMessage.original_text ?? '') : '';
   }
+
+  // hasUnread 면 lastMessage 자리를 "N개의 새 메시지" 텍스트로 덮어쓴다.
+  // 숫자만 핑크(`colors.primary`) 강조. 99 초과는 "99+" 로 절단. tombstone 매치는
+  // unread 자체를 표시 안 함 (기존 정책).
+  const showUnreadCount = hasUnread && !isTombstone;
+  const unreadCountDisplay = item.unread_count > 99 ? '99+' : String(item.unread_count);
 
   return (
     <Pressable
@@ -88,38 +92,44 @@ export function MatchItem({ item, onPress, onLongPress }: MatchItemProps) {
           <Text style={styles.name} numberOfLines={1}>
             {displayName}
           </Text>
+          {/* mig 022: muted=true 인 매치는 헤더 우측에 음소거 아이콘. 활성 상태는
+              관례대로 아이콘 미노출 (텔레그램/카톡 동일 — UI 노이즈 회피).
+              tombstone (탈퇴/언매치) 매치는 알림 의미가 없으므로 표시 안 함. */}
+          {item.muted && !isTombstone && (
+            <Ionicons
+              name="notifications-off"
+              size={14}
+              color={colors.textLight}
+              style={styles.mutedIcon}
+            />
+          )}
+        </View>
+        <View style={styles.messageRow}>
+          {/* lastMessage 자리. unread 가 있으면 "N개의 새 메시지" 형식으로
+              덮어쓰며 숫자만 핑크 강조. 그 외엔 일반 미리보기 텍스트. */}
+          {showUnreadCount ? (
+            <Text
+              style={[styles.lastMessage, styles.lastMessageUnread]}
+              numberOfLines={1}
+            >
+              <Text style={styles.unreadCount}>{unreadCountDisplay}</Text>
+              {t('matches.preview.newMessagesSuffix')}
+            </Text>
+          ) : (
+            <Text
+              style={[
+                styles.lastMessage,
+                isTombstone && styles.lastMessageTombstone,
+              ]}
+              numberOfLines={1}
+            >
+              {lastMessageText}
+            </Text>
+          )}
           {item.last_message && (
             <Text style={styles.time}>
               {formatRelativeTime(item.last_message.created_at)}
             </Text>
-          )}
-        </View>
-        <View style={styles.messageRow}>
-          <Text
-            style={[
-              styles.lastMessage,
-              // 마스킹 미리보기도 unread 톤(굵게/강조) 으로 표시 — strategist
-              // 권고. hasUnread 와 isMaskedPreview 가 일반적으로 동조하지만
-              // 별도 케이스 (BE v3 가 정합 상태로 양쪽을 같이 움직이지만 안전망)
-              // 를 위해 OR 분기.
-              (hasUnread || isMaskedPreview) && !isTombstone && styles.lastMessageUnread,
-              isTombstone && styles.lastMessageTombstone,
-            ]}
-            numberOfLines={1}
-          >
-            {lastMessageText}
-          </Text>
-          {hasUnread && !isTombstone && (
-            <LinearGradient
-              colors={[...gradients.primary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.badge}
-            >
-              <Text style={styles.badgeText}>
-                {item.unread_count > 99 ? '99+' : item.unread_count}
-              </Text>
-            </LinearGradient>
           )}
         </View>
       </View>
@@ -159,6 +169,9 @@ const styles = StyleSheet.create({
     flex: 1,
     letterSpacing: 0.2,
   },
+  mutedIcon: {
+    marginLeft: 8,
+  },
   time: {
     fontSize: 12,
     color: colors.textSecondary,
@@ -195,18 +208,10 @@ const styles = StyleSheet.create({
     // 두어 구분.
     color: colors.textLight,
   },
-  badge: {
-    borderRadius: 11,
-    minWidth: 22,
-    height: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 7,
-    marginLeft: 8,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    color: colors.white,
+  // unread 카운트 숫자만 핑크 강조. 부모 Text 의 fontSize/lineHeight 를 상속해
+  // baseline 이 어긋나지 않는다. semibold 로 살짝 굵게 — 가독성 보강.
+  unreadCount: {
+    color: colors.primary,
+    fontFamily: fonts.semibold,
   },
 });

@@ -17,6 +17,17 @@ export async function hideMatch(matchId: string): Promise<void> {
   await api.post<void>(`/api/matches/${matchId}/hide`);
 }
 
+// mig 022: 매치별 푸시 알림 옵트아웃 토글 (장기 long-press 액션시트의 "알림 끄기").
+// 멱등 — 같은 값으로 여러 번 호출해도 안전. user_preferences.notify_messages
+// 전역 토글과 AND 결합되어 어느 쪽이든 OFF 면 푸시 미발송.
+export async function setMatchMute(matchId: string, muted: boolean): Promise<void> {
+  if (muted) {
+    await api.post<{ muted: boolean }>(`/api/matches/${matchId}/mute`);
+  } else {
+    await api.delete<{ muted: boolean }>(`/api/matches/${matchId}/mute`);
+  }
+}
+
 // BE 의 MatchPartner DTO 는 birth_date / interests / voice_intro_audio_url 을
 // 생략한다. 종전엔 FE 가 supabase 에서 directly select 했지만, 그 경로의
 // `voice_intro_audio_url` 는 mig 011 의 정의상 "작성자 언어 슬롯 미러" 라

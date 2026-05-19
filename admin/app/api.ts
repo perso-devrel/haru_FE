@@ -143,8 +143,51 @@ export type DiscoverCard = {
   nationality: string;
   language: string;
   voice_intro: string | null;
+  // voice-intro-multilang sprint: 시청자 언어 슬롯 미러 URL. BE 가 viewer 의 profiles.language
+  // 기준으로 ko/ja/en 중 하나로 골라 응답. likes-received 도 동일 shape.
+  voice_intro_audio_url: string | null;
   interests: string[];
   photos: string[];
+};
+
+// BE GET /api/profile/me 응답 (haru_BE/src/routes/profile.ts). DB profiles row 그대로
+// 노출. admin 은 표시/수정에 필요한 필드만 의존하므로 partial type 으로 정의.
+export type MyProfile = {
+  id: string;
+  display_name: string;
+  birth_date: string;
+  gender: 'male' | 'female' | 'other';
+  nationality: string;
+  language: string;
+  voice_intro: string | null;
+  voice_intro_phrase_id?: string | null;
+  interests: string[];
+  photos: string[];
+  voice_clone_status: 'pending' | 'processing' | 'ready' | 'failed' | null;
+  elevenlabs_voice_id: string | null;
+};
+
+// 프로필 수정 페이로드. BE profileUpsertSchema (haru_BE/src/schemas/profile.ts) 와 일치.
+export type ProfileUpsertPayload = {
+  display_name: string;
+  birth_date: string;
+  gender: 'male' | 'female' | 'other';
+  nationality: string;
+  language: string;
+  voice_intro?: string | null;
+  // preset 카탈로그 매칭 시 Gemini 우회 (voice-intro-preset-bypass sprint).
+  voice_intro_phrase_id?: string | null;
+  interests?: string[];
+};
+
+// BE GET /api/preferences 응답 + PUT 페이로드 (haru_BE/src/routes/preference.ts).
+export type UserPreferences = {
+  user_id?: string;
+  min_age: number;
+  max_age: number;
+  preferred_genders: ('male' | 'female' | 'other')[];
+  preferred_languages: string[];
+  preferred_nationalities: string[];
 };
 
 // ----- 도메인 API 래퍼 -----
@@ -186,6 +229,12 @@ export async function getDiscover(asUserId: string, limit = 10): Promise<Discove
   return adminFetch<DiscoverCard[]>(`/api/discover?limit=${limit}`, { impersonate: asUserId });
 }
 
+// 나를 like 한 사용자 목록. BE GET /api/discover/likes-received — 응답 shape 는 디스커버
+// 카드와 동일 (사진 1장 / photo_access 잠금 / voice_intro_audio_url 시청자 언어 슬롯).
+export async function getReceivedLikes(asUserId: string): Promise<DiscoverCard[]> {
+  return adminFetch<DiscoverCard[]>(`/api/discover/likes-received`, { impersonate: asUserId });
+}
+
 export async function swipe(
   asUserId: string,
   swipedId: string,
@@ -195,5 +244,41 @@ export async function swipe(
     method: 'POST',
     impersonate: asUserId,
     body: { swiped_id: swipedId, direction },
+  });
+}
+
+// 내 프로필 조회 (GET /api/profile/me).
+export async function getMyProfile(asUserId: string): Promise<MyProfile> {
+  return adminFetch<MyProfile>('/api/profile/me', { impersonate: asUserId });
+}
+
+// 내 프로필 수정 (PUT /api/profile/me).
+// 비용 주의: voice_intro 가 변경되고 voice_intro_phrase_id 매칭이 아니면 Gemini 번역 + TTS
+// 파이프라인이 트리거된다. preset 카탈로그 id 동봉 시 Gemini 단계 우회.
+export async function updateMyProfile(
+  asUserId: string,
+  payload: ProfileUpsertPayload,
+): Promise<MyProfile> {
+  return adminFetch<MyProfile>('/api/profile/me', {
+    method: 'PUT',
+    impersonate: asUserId,
+    body: payload,
+  });
+}
+
+// 매칭 선호도 조회 (GET /api/preferences).
+export async function getPreferences(asUserId: string): Promise<UserPreferences> {
+  return adminFetch<UserPreferences>('/api/preferences', { impersonate: asUserId });
+}
+
+// 매칭 선호도 수정 (PUT /api/preferences).
+export async function updatePreferences(
+  asUserId: string,
+  payload: UserPreferences,
+): Promise<UserPreferences> {
+  return adminFetch<UserPreferences>('/api/preferences', {
+    method: 'PUT',
+    impersonate: asUserId,
+    body: payload,
   });
 }

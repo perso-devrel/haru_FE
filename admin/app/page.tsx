@@ -17,13 +17,21 @@ import {
   type DiscoverCard,
   type Message,
   type MatchSummary,
+  type MyProfile,
+  type ProfileUpsertPayload,
+  type UserPreferences,
   getDiscover,
+  getMyProfile,
+  getPreferences,
+  getReceivedLikes,
   listDevAccounts,
   listMatches,
   listMessages,
   sendMessage,
   setAdminSecret,
   swipe,
+  updateMyProfile,
+  updatePreferences,
   verifyAdminSecret,
 } from './api';
 
@@ -205,7 +213,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [accounts, setAccounts] = useState<DevAccount[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'matches' | 'discover'>('matches');
+  const [tab, setTab] = useState<'matches' | 'discover' | 'likes' | 'profile'>('matches');
   const [unreadByAccount, setUnreadByAccount] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -398,6 +406,12 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                 <TabButton active={tab === 'discover'} onClick={() => setTab('discover')}>
                   Discover
                 </TabButton>
+                <TabButton active={tab === 'likes'} onClick={() => setTab('likes')}>
+                  Likes
+                </TabButton>
+                <TabButton active={tab === 'profile'} onClick={() => setTab('profile')}>
+                  Profile
+                </TabButton>
                 <div
                   className="ml-auto py-3 text-xs"
                   style={{ color: C.textSecondary }}
@@ -414,6 +428,12 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
               )}
               {tab === 'discover' && (
                 <DiscoverPane key={selectedAccount.user_id} account={selectedAccount} />
+              )}
+              {tab === 'likes' && (
+                <LikesPane key={selectedAccount.user_id} account={selectedAccount} />
+              )}
+              {tab === 'profile' && (
+                <ProfilePane key={selectedAccount.user_id} account={selectedAccount} />
               )}
             </>
           ) : (
@@ -463,6 +483,13 @@ function MatchesPane({ account }: { account: DevAccount }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  // 사이드바 마지막 메시지 미리보기 — BE 의 last_message 가 viewer 필터
+  // (sender_id=viewer OR audio_status='ready') 로 가려져 'pending'/'failed' 상대
+  // 발신 메시지가 잡히지 않는 회귀를 admin 가시성 위해 우회. 각 매치별 listMessages
+  // (limit=1) 응답의 첫 메시지를 사용. dev 매치 수가 적어 N+1 비용 무시 가능.
+  // listMessages 도 동일 필터 적용이라 '진짜 모든 메시지' 까지는 못 보지만, 본인
+  // 발신 메시지는 status 무관하게 잡혀 기존 "매치 시작" 대비 정보량 증가.
+  const [previewByMatch, setPreviewByMatch] = useState<Record<string, Message | null>>({});
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -486,6 +513,37 @@ function MatchesPane({ account }: { account: DevAccount }) {
     }, 5000);
     return () => clearInterval(interval);
   }, [account.user_id]);
+
+  // 매치 목록이 갱신될 때마다 각 매치의 마지막 메시지를 일괄 fetch.
+  // 폴링 interval (5s) 보다 자주 호출되지 않도록 matches.length + 각 match_id 의
+  // 합으로만 트리거. last_message_created_at 변동은 ChatView 의 내부 fetchMessages
+  // 가 별도로 처리하므로 본 effect 는 sidebar 미리보기 용도만.
+  useEffect(() => {
+    if (matches.length === 0) {
+      setPreviewByMatch({});
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      matches.map((m) =>
+        listMessages(account.user_id, m.match_id, 1)
+          .then((msgs) => [m.match_id, msgs[msgs.length - 1] ?? null] as const)
+          .catch(() => [m.match_id, null] as const),
+      ),
+    ).then((entries) => {
+      if (!cancelled) setPreviewByMatch(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // matches 배열 자체가 폴링으로 자주 갱신되지만, last_message_created_at /
+    // match_id 시그니처로 변경 시에만 미리보기 재조회.
+  }, [
+    account.user_id,
+    matches
+      .map((m) => `${m.match_id}:${m.last_message?.created_at ?? ''}`)
+      .join(','),
+  ]);
 
   const selectedMatch = matches.find((m) => m.match_id === selectedMatchId) ?? null;
 
@@ -577,7 +635,9 @@ function MatchesPane({ account }: { account: DevAccount }) {
                   className="mt-0.5 truncate text-xs"
                   style={{ color: C.textSecondary }}
                 >
-                  {m.last_message?.original_text ?? <em>매치 시작</em>}
+                  {(previewByMatch[m.match_id]?.original_text
+                    ?? m.last_message?.original_text)
+                    || <em>매치 시작</em>}
                 </div>
                 {m.unmatched_at && (
                   <div className="text-[10px]" style={{ color: C.textLight }}>
@@ -1049,6 +1109,630 @@ function DiscoverRow({
           ♥ Like
         </button>
       </div>
+    </div>
+  );
+}
+
+// ===== Likes 패널 (나를 like 한 사용자) =====
+//
+// BE /api/discover/likes-received 가 디스커버와 동일 shape 를 응답하므로 DiscoverRow
+// 재사용. 다만 표시 카피와 swipe 동작 결과가 다름:
+//   - 빈 상태: "받은 좋아요 없음"
+//   - 같은 풀의 like 는 항상 즉시 매치 (상대가 이미 like 한 상태이므로) — alert 메시지 강조
+
+function LikesPane({ account }: { account: DevAccount }) {
+  const [cards, setCards] = useState<DiscoverCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setActionMsg(null);
+    getReceivedLikes(account.user_id)
+      .then(setCards)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Unknown error'))
+      .finally(() => setLoading(false));
+  }, [account.user_id]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const handleSwipe = async (card: DiscoverCard, direction: 'like' | 'pass') => {
+    if (busyIds.has(card.id)) return;
+    setBusyIds((prev) => new Set(prev).add(card.id));
+    setActionMsg(null);
+    try {
+      const result = (await swipe(account.user_id, card.id, direction)) as
+        | { matched?: boolean }
+        | unknown;
+      if (
+        direction === 'like' &&
+        result &&
+        typeof result === 'object' &&
+        'matched' in result &&
+        (result as { matched: boolean }).matched
+      ) {
+        setActionMsg(`매치 성사! ${card.display_name}`);
+      } else if (direction === 'like') {
+        // received-likes 풀에서 like → 상대 이미 like → 항상 즉시 매치. 도달 X 분기.
+        setActionMsg(`Like 전송: ${card.display_name}`);
+      } else {
+        setActionMsg(`Pass: ${card.display_name}`);
+      }
+      setCards((prev) => prev.filter((c) => c.id !== card.id));
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : 'swipe failed');
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(card.id);
+        return next;
+      });
+    }
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        className="flex items-center justify-between border-b px-6 py-3"
+        style={{ background: C.card, borderColor: C.border }}
+      >
+        <span className="text-sm font-semibold" style={{ color: C.text }}>
+          Likes received {cards.length > 0 && `(${cards.length})`}
+        </span>
+        <div className="flex items-center gap-3">
+          {actionMsg && (
+            <span className="text-xs" style={{ color: C.textSecondary }}>
+              {actionMsg}
+            </span>
+          )}
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="text-xs transition"
+            style={{ color: C.primary }}
+          >
+            {loading ? '...' : 'refresh'}
+          </button>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        {loading && cards.length === 0 && (
+          <div
+            className="flex items-center justify-center py-12 text-sm"
+            style={{ color: C.textSecondary }}
+          >
+            받은 좋아요 로딩 중...
+          </div>
+        )}
+        {error && (
+          <div
+            className="flex items-center justify-center py-6 text-sm"
+            style={{ color: C.error }}
+          >
+            {error}
+          </div>
+        )}
+        {!loading && !error && cards.length === 0 && (
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-12 text-sm"
+            style={{ color: C.textSecondary }}
+          >
+            <span>받은 좋아요 없음</span>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          {cards.map((c) => (
+            <DiscoverRow
+              key={c.id}
+              card={c}
+              busy={busyIds.has(c.id)}
+              onPass={() => handleSwipe(c, 'pass')}
+              onLike={() => handleSwipe(c, 'like')}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== Profile 패널 (프로필 / 보이스 한마디 / 매칭 선호 수정) =====
+//
+// 세 섹션 모두 같은 패널에 두고 섹션별 독립 저장 버튼. BE 라우트:
+//   - PUT /api/profile/me  (display_name/birth_date/gender/nationality/language/voice_intro/interests)
+//   - PUT /api/preferences (min/max_age + preferred_genders/languages/nationalities)
+//
+// 비용 경고:
+//   - voice_intro 변경은 Gemini 번역×3 + ElevenLabs TTS×3 + OpenAI Moderation 호출 트리거.
+//     dev 환경에서도 매번 호출되므로 dev/QA 잦은 수정은 비용 누적 (~$0.10~0.30/회).
+//   - 사용자 의식적 트리거 보호 위해 voice_intro 섹션 상단에 비용 경고 카피 노출.
+
+const LANGUAGE_CODES_ADMIN = ['ko', 'ja', 'en', 'th', 'hi'] as const;
+const NATIONALITY_CODES_ADMIN = [
+  'KR', 'JP', 'US', 'GB', 'CA', 'AU', 'PH', 'SG', 'TH', 'IN',
+] as const;
+const GENDERS_ADMIN = ['male', 'female', 'other'] as const;
+
+function ProfilePane({ account }: { account: DevAccount }) {
+  const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [prefs, setPrefs] = useState<UserPreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
+    Promise.all([getMyProfile(account.user_id), getPreferences(account.user_id)])
+      .then(([p, pr]) => {
+        setProfile(p);
+        setPrefs(pr);
+      })
+      .catch((err) => setLoadError(err instanceof Error ? err.message : 'Unknown error'))
+      .finally(() => setLoading(false));
+  }, [account.user_id]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm" style={{ color: C.textSecondary }}>
+        프로필 로딩 중...
+      </div>
+    );
+  }
+  if (loadError || !profile || !prefs) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm" style={{ color: C.error }}>
+        <span>{loadError ?? '프로필 또는 선호 로드 실패'}</span>
+        <button onClick={refresh} className="rounded-full border px-4 py-2 text-xs" style={{ borderColor: C.border, color: C.primary }}>
+          재시도
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+      <ProfileSection
+        account={account}
+        profile={profile}
+        onSaved={(next) => setProfile(next)}
+      />
+      <VoiceIntroSection
+        account={account}
+        profile={profile}
+        onSaved={(next) => setProfile(next)}
+      />
+      <PreferencesSection
+        account={account}
+        prefs={prefs}
+        onSaved={(next) => setPrefs(next)}
+      />
+    </div>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section
+      className="rounded-2xl border p-5"
+      style={{ background: C.card, borderColor: C.border, boxShadow: '0 2px 8px rgba(17,24,39,0.04)' }}
+    >
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider" style={{ color: C.textSecondary }}>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-1 text-xs font-medium" style={{ color: C.textSecondary }}>
+      {children}
+    </div>
+  );
+}
+
+const fieldInputStyle: React.CSSProperties = {
+  background: '#FFFFFF',
+  borderColor: C.borderSoft,
+  color: C.text,
+};
+
+function ProfileSection({
+  account,
+  profile,
+  onSaved,
+}: {
+  account: DevAccount;
+  profile: MyProfile;
+  onSaved: (next: MyProfile) => void;
+}) {
+  const [displayName, setDisplayName] = useState(profile.display_name);
+  const [birthDate, setBirthDate] = useState(profile.birth_date);
+  const [gender, setGender] = useState<'male' | 'female' | 'other'>(profile.gender);
+  const [nationality, setNationality] = useState(profile.nationality);
+  const [language, setLanguage] = useState(profile.language);
+  const [interests, setInterests] = useState((profile.interests ?? []).join(', '));
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    setMsg(null);
+    try {
+      // voice_intro 는 본 섹션에서 건드리지 않는다. 기존 값 유지하여 voiceIntroChanged
+      // 분기가 false 가 되도록 페이로드에 동일 값을 그대로 동봉 — Gemini/TTS 비용 0.
+      const payload: ProfileUpsertPayload = {
+        display_name: displayName,
+        birth_date: birthDate,
+        gender,
+        nationality,
+        language,
+        voice_intro: profile.voice_intro ?? null,
+        interests: interests
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
+      const updated = await updateMyProfile(account.user_id, payload);
+      onSaved(updated);
+      setMsg('저장됨');
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : '저장 실패');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SectionCard title="profile">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <FieldLabel>display_name</FieldLabel>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          />
+        </div>
+        <div>
+          <FieldLabel>birth_date (YYYY-MM-DD)</FieldLabel>
+          <input
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+            placeholder="1995-01-01"
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          />
+        </div>
+        <div>
+          <FieldLabel>gender</FieldLabel>
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value as 'male' | 'female' | 'other')}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          >
+            {GENDERS_ADMIN.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <FieldLabel>language</FieldLabel>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          >
+            {LANGUAGE_CODES_ADMIN.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <FieldLabel>nationality</FieldLabel>
+          <select
+            value={nationality}
+            onChange={(e) => setNationality(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          >
+            {NATIONALITY_CODES_ADMIN.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-span-2">
+          <FieldLabel>interests (comma-separated canonical id)</FieldLabel>
+          <input
+            value={interests}
+            onChange={(e) => setInterests(e.target.value)}
+            placeholder="cafe, walking, gym"
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-full px-5 py-2 text-xs font-semibold text-white transition disabled:opacity-50"
+          style={{ background: C.primary, boxShadow: '0 4px 14px rgba(2,132,199,0.32)' }}
+        >
+          {saving ? '저장 중...' : '저장'}
+        </button>
+        {msg && (
+          <span className="text-xs" style={{ color: C.textSecondary }}>
+            {msg}
+          </span>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+function VoiceIntroSection({
+  account,
+  profile,
+  onSaved,
+}: {
+  account: DevAccount;
+  profile: MyProfile;
+  onSaved: (next: MyProfile) => void;
+}) {
+  const [voiceIntro, setVoiceIntro] = useState(profile.voice_intro ?? '');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const changed = (voiceIntro || null) !== (profile.voice_intro || null);
+
+  const save = async () => {
+    if (saving || !changed) return;
+    setSaving(true);
+    setMsg(null);
+    try {
+      // voice_intro 만 변경된 페이로드. 다른 필드는 기존 값 그대로 동봉
+      // (profileUpsertSchema 는 display_name/birth_date/gender/nationality/language 가 필수).
+      // voice_intro_phrase_id 는 미동봉 → BE 가 Gemini 폴백 경로로 흡수 (자유 입력).
+      const payload: ProfileUpsertPayload = {
+        display_name: profile.display_name,
+        birth_date: profile.birth_date,
+        gender: profile.gender,
+        nationality: profile.nationality,
+        language: profile.language,
+        voice_intro: voiceIntro.trim() || null,
+        interests: profile.interests ?? [],
+      };
+      const updated = await updateMyProfile(account.user_id, payload);
+      onSaved(updated);
+      setMsg('저장됨 — Gemini 번역 + TTS 파이프라인이 비동기로 진행됩니다');
+    } catch (err) {
+      // BE 가 모더레이션 사전/OpenAI 차단 시 422 + code='message_blocked' 응답
+      // (voice-intro-moderation-unification sprint). admin 토스트는 단순 표시.
+      setMsg(err instanceof Error ? err.message : '저장 실패');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SectionCard title="voice intro">
+      <div
+        className="mb-3 rounded-xl border px-3 py-2 text-[11px] leading-snug"
+        style={{ background: '#FEF3C7', borderColor: '#FDE68A', color: '#92400E' }}
+      >
+        ⚠ 변경 시 Gemini 번역 × 3슬롯 + ElevenLabs TTS × 3슬롯 + OpenAI Moderation 호출 — 회당 약 $0.10~0.30 발생.
+        자유 입력 (preset 우회) 경로라 비용 누적에 주의.
+      </div>
+      <FieldLabel>voice_intro (max 500)</FieldLabel>
+      <textarea
+        value={voiceIntro}
+        onChange={(e) => setVoiceIntro(e.target.value)}
+        rows={3}
+        maxLength={500}
+        className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+        style={fieldInputStyle}
+      />
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving || !changed}
+          className="rounded-full px-5 py-2 text-xs font-semibold text-white transition disabled:opacity-50"
+          style={{ background: C.primary, boxShadow: '0 4px 14px rgba(2,132,199,0.32)' }}
+        >
+          {saving ? '저장 중...' : changed ? '저장 (비용 발생)' : '변경 없음'}
+        </button>
+        {profile.voice_clone_status && (
+          <span className="text-xs" style={{ color: C.textSecondary }}>
+            voice_clone_status: {profile.voice_clone_status}
+          </span>
+        )}
+        {msg && (
+          <span className="text-xs" style={{ color: C.textSecondary }}>
+            {msg}
+          </span>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+function PreferencesSection({
+  account,
+  prefs,
+  onSaved,
+}: {
+  account: DevAccount;
+  prefs: UserPreferences;
+  onSaved: (next: UserPreferences) => void;
+}) {
+  const [minAge, setMinAge] = useState(prefs.min_age);
+  const [maxAge, setMaxAge] = useState(prefs.max_age);
+  const [genders, setGenders] = useState<('male' | 'female' | 'other')[]>(prefs.preferred_genders);
+  const [languages, setLanguages] = useState<string[]>(prefs.preferred_languages);
+  const [nationalities, setNationalities] = useState<string[]>(prefs.preferred_nationalities);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const toggle = <T extends string>(list: T[], val: T): T[] =>
+    list.includes(val) ? list.filter((v) => v !== val) : [...list, val];
+
+  const save = async () => {
+    if (saving) return;
+    if (minAge > maxAge) {
+      setMsg('min_age 는 max_age 이하여야 합니다');
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    try {
+      const payload: UserPreferences = {
+        min_age: minAge,
+        max_age: maxAge,
+        preferred_genders: genders,
+        preferred_languages: languages,
+        preferred_nationalities: nationalities,
+      };
+      const updated = await updatePreferences(account.user_id, payload);
+      onSaved(updated);
+      setMsg('저장됨');
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : '저장 실패');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SectionCard title="matching preferences">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <FieldLabel>min_age</FieldLabel>
+          <input
+            type="number"
+            min={18}
+            max={100}
+            value={minAge}
+            onChange={(e) => setMinAge(Number(e.target.value))}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          />
+        </div>
+        <div>
+          <FieldLabel>max_age</FieldLabel>
+          <input
+            type="number"
+            min={18}
+            max={100}
+            value={maxAge}
+            onChange={(e) => setMaxAge(Number(e.target.value))}
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+            style={fieldInputStyle}
+          />
+        </div>
+        <div className="col-span-2">
+          <FieldLabel>preferred_genders</FieldLabel>
+          <ChipGroup
+            options={GENDERS_ADMIN as readonly string[]}
+            selected={genders}
+            onToggle={(v) => setGenders(toggle(genders, v as 'male' | 'female' | 'other'))}
+          />
+        </div>
+        <div className="col-span-2">
+          <FieldLabel>preferred_languages (빈 = 제약 없음)</FieldLabel>
+          <ChipGroup
+            options={LANGUAGE_CODES_ADMIN as readonly string[]}
+            selected={languages}
+            onToggle={(v) => setLanguages(toggle(languages, v))}
+          />
+        </div>
+        <div className="col-span-2">
+          <FieldLabel>preferred_nationalities (빈 = 제약 없음)</FieldLabel>
+          <ChipGroup
+            options={NATIONALITY_CODES_ADMIN as readonly string[]}
+            selected={nationalities}
+            onToggle={(v) => setNationalities(toggle(nationalities, v))}
+          />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-full px-5 py-2 text-xs font-semibold text-white transition disabled:opacity-50"
+          style={{ background: C.primary, boxShadow: '0 4px 14px rgba(2,132,199,0.32)' }}
+        >
+          {saving ? '저장 중...' : '저장'}
+        </button>
+        {msg && (
+          <span className="text-xs" style={{ color: C.textSecondary }}>
+            {msg}
+          </span>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+function ChipGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: readonly string[];
+  selected: string[];
+  onToggle: (val: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const active = selected.includes(opt);
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onToggle(opt)}
+            className="rounded-full border px-3 py-1 text-[11px] font-medium transition"
+            style={
+              active
+                ? {
+                    background: C.primary,
+                    borderColor: C.primary,
+                    color: '#FFFFFF',
+                  }
+                : {
+                    background: '#FFFFFF',
+                    borderColor: C.border,
+                    color: C.textSecondary,
+                  }
+            }
+          >
+            {opt}
+          </button>
+        );
+      })}
     </div>
   );
 }

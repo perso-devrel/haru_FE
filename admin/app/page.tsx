@@ -1601,10 +1601,15 @@ function VoiceIntroSection({
     profile.language === 'ko' || profile.language === 'ja' || profile.language === 'en'
       ? profile.language
       : 'en';
-  const audioUrl =
-    profile.voice_intro_audio_urls && profile.voice_intro_audio_urls[slot]
-      ? profile.voice_intro_audio_urls[slot] ?? null
-      : null;
+
+  // 3개 언어 슬롯 모두의 메타 (라벨 / 텍스트 / 오디오 URL / 합성 상태) — voice-intro-
+  // multilang sprint 의 JSONB 슬롯 (mig 011) 을 그대로 노출. 작성자 본인 슬롯은
+  // 원본 voice_intro, 나머지는 voice_intro_translations 의 Gemini 번역본.
+  const slotsAdmin: { code: 'ko' | 'ja' | 'en'; label: string }[] = [
+    { code: 'ko', label: '한국어' },
+    { code: 'ja', label: '日本語' },
+    { code: 'en', label: 'English' },
+  ];
 
   // 다음 저장 시 보낼 작성자 언어 텍스트 — preset 모드면 카탈로그에서, custom 이면 textarea.
   const resolvedText: string | null = (() => {
@@ -1649,17 +1654,62 @@ function VoiceIntroSection({
 
   return (
     <SectionCard title="voice intro">
-      {/* 현재 voice intro 오디오 재생 — 본인 language 슬롯 URL. 미보유 / 합성 진행 중이면 안내. */}
+      {/* 현재 voice intro 오디오 — ko/ja/en 3개 슬롯 모두 재생 가능. 작성자 본인
+          슬롯은 원본 텍스트, 나머지는 Gemini 번역본. 슬롯별 audio_status 와 url
+          유무에 따라 안내 카피 분기. */}
       <div className="mb-4">
-        <FieldLabel>현재 보이스 한마디 ({slot} 슬롯)</FieldLabel>
-        {audioUrl ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption
-          <audio src={audioUrl} controls className="h-8 w-full" />
-        ) : (
-          <span className="text-xs" style={{ color: C.textLight }}>
-            오디오 없음 (voice clone 미보유 / 합성 미완료 / voice_intro 미설정)
-          </span>
-        )}
+        <FieldLabel>현재 보이스 한마디 (ko / ja / en 슬롯)</FieldLabel>
+        <div className="flex flex-col gap-2">
+          {slotsAdmin.map(({ code, label }) => {
+            const url = profile.voice_intro_audio_urls?.[code] ?? null;
+            const slotText =
+              code === slot
+                ? profile.voice_intro
+                : profile.voice_intro_translations?.[code] ?? null;
+            const status = profile.voice_intro_audio_status?.[code] ?? null;
+            const isAuthor = code === slot;
+            return (
+              <div
+                key={code}
+                className="rounded-xl border px-3 py-2"
+                style={{
+                  background: isAuthor ? C.primaryLight : '#FFFFFF',
+                  borderColor: isAuthor ? C.primary : C.border,
+                }}
+              >
+                <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                  <span style={{ color: isAuthor ? C.primaryDark : C.textSecondary }}>
+                    {label} {isAuthor && '· 작성자 슬롯'}
+                  </span>
+                  {status && status !== 'ready' && (
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[9px]"
+                      style={{
+                        background: status === 'failed' ? '#FEE2E2' : '#F3F4F6',
+                        color: status === 'failed' ? C.error : C.textSecondary,
+                      }}
+                    >
+                      {status}
+                    </span>
+                  )}
+                </div>
+                {slotText && (
+                  <div className="mb-1 text-xs leading-snug" style={{ color: C.text }}>
+                    {slotText}
+                  </div>
+                )}
+                {url ? (
+                  // eslint-disable-next-line jsx-a11y/media-has-caption
+                  <audio src={url} controls className="h-8 w-full" />
+                ) : (
+                  <span className="text-[11px]" style={{ color: C.textLight }}>
+                    오디오 없음 (voice clone 미보유 / 합성 미완료 / voice_intro 미설정)
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 모드 토글 */}

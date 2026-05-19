@@ -238,6 +238,10 @@ export default {
         messagePreparing: "メッセージ準備中…",
         tapToListen: "タップして再生",
         playing: "再生中…",
+        audio: {
+            regenerating: "音声を再生成中…",
+            regeneratePlay: "音声を再生成して再生",
+        },
         intimacy: "親密度",
         intimacyUntilMain: "メイン写真公開まであと{{count}}回",
         intimacyUntilAll: "すべての写真公開まであと{{count}}回",

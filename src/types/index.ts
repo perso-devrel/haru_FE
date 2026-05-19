@@ -229,6 +229,14 @@ export interface Message {
   // translated_text)를 숨기고 편지 UI 만 노출. 본인 발신 메시지는 항상 null
   // (BE 라우트가 sender_id == req.userId 호출을 403 반환).
   listened_at: string | null;
+  // audio-expiry sprint (mig 025): sweep 이 청취 + 30일 경과 음성을 폐기한
+  // 시각. audio_status='ready' + audio_url=null + audio_purged_at NOT NULL
+  // 조합으로 "재생성 가능한 purge 상태" 를 식별. 재생성 호출이 성공하면
+  // NULL 로 reset (audio_url 새 값 동반).
+  audio_purged_at: string | null;
+  // audio-expiry sprint (mig 025): 가장 최근 재합성 시각. FE 직접 사용처는
+  // 없으나 (sweep eligibility 판단은 BE 단독) 타입 정합성 유지를 위해 노출.
+  audio_refreshed_at: string | null;
   created_at: string;
 }
 

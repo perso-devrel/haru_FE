@@ -239,6 +239,10 @@ export default {
         messagePreparing: "메시지 준비 중..",
         tapToListen: "탭해서 듣기",
         playing: "재생 중..",
+        audio: {
+            regenerating: "음성을 다시 만드는 중..",
+            regeneratePlay: "음성을 다시 만들고 재생",
+        },
         intimacy: "친밀도",
         intimacyUntilMain: "메인 사진 공개까지 {{count}}회",
         intimacyUntilAll: "모든 사진 공개까지 {{count}}회",

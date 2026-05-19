@@ -211,6 +211,10 @@ export default function ChatScreen() {
     // listened_at 일원화로 의미를 잃었다. 메시지별 청취 마킹은 markListened
     // 단일 동선.
     markListened,
+    // audio-expiry sprint: 폐기된 음성을 ElevenLabs 로 재합성. ChatBubble 의
+    // purged 분기 (audio_status='ready' + audio_url=null + audio_purged_at) 에서
+    // onPress 호출 → 성공 시 audio_url 갱신된 row 반환 → 즉시 재생.
+    regenerateAudio,
   } = useChat(matchId!);
 
   // mig 014 match-roundtrip-realtime: 클라이언트 윈도우 재계산 제거.
@@ -486,6 +490,7 @@ export default function ChatScreen() {
           partnerPhoto={partnerPhoto}
           showAvatar={showAvatar}
           onListened={markListened}
+          onRegenerateAudio={regenerateAudio}
           onAvatarPress={() => {
             // Tombstone partner has nothing meaningful in the profile modal
             // (cleared name/photos/interests/voice intro), so suppress the

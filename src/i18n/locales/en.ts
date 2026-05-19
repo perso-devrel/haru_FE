@@ -239,6 +239,10 @@ export default {
     messagePreparing: 'Preparing message…',
     tapToListen: 'Tap to listen',
     playing: 'Playing…',
+    audio: {
+      regenerating: 'Regenerating voice…',
+      regeneratePlay: 'Regenerate and play voice',
+    },
     intimacy: 'Intimacy',
     intimacyUntilMain: '{{count}} more to unlock main photo',
     intimacyUntilAll: '{{count}} more to unlock all photos',

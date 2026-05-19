@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,10 @@ interface ChatBubbleProps {
   // 재생을 시작해 자연 완료에 도달하면 본 ChatBubble 내부의 transition
   // detection useEffect 가 1회 발화. 송신자 본인 메시지에는 호출 가드.
   onListened?: (messageId: string) => void;
+  // audio-expiry sprint: 폐기된 음성 재합성 요청. 성공 시 audio_url 갱신된
+  // Message row 를 resolve — 호출처에서 즉시 playSharedAudio 트리거. 실패
+  // (null) 시 본 컴포넌트는 별도 toast 없이 silent fail (다시 누르면 재시도).
+  onRegenerateAudio?: (messageId: string) => Promise<Message | null>;
 }
 
 const AVATAR_SIZE = 36;
@@ -36,6 +40,7 @@ export function ChatBubble({
   showAvatar = true,
   onAvatarPress,
   onListened,
+  onRegenerateAudio,
 }: ChatBubbleProps) {
   const { t } = useTranslation();
   const sharedState = useSharedAudioState();
@@ -44,7 +49,29 @@ export function ChatBubble({
   // 메시지가 동시에 'playing' 상태일 수는 없다.
   const isActive = !!message.audio_url && sharedState.currentUrl === message.audio_url;
   const isPlayingThis = isActive && sharedState.isPlaying;
+  // audio-expiry sprint: 폐기된 음성을 재합성하는 동안 로딩 인디케이터 표시.
+  // 호출 동안 onPress 가 새 호출을 발화하지 않도록 가드. 성공/실패 모두 false
+  // 로 복귀 (실패 시 사용자가 다시 누르면 재시도).
+  const [regenerating, setRegenerating] = useState(false);
+  // 폐기된 음성 메시지인지 — sweep 으로 audio_url 이 null 되었으나 audio_status
+  // 는 ready 로 유지되며 audio_purged_at 가 set. 본 분기에서만 재생성 버튼 노출.
+  const isPurged =
+    message.audio_status === 'ready' &&
+    !message.audio_url &&
+    !!message.audio_purged_at;
   const handlePlayPress = () => {
+    if (regenerating) return;
+    if (isPurged && onRegenerateAudio) {
+      setRegenerating(true);
+      onRegenerateAudio(message.id)
+        .then((updated) => {
+          if (updated?.audio_url) {
+            playSharedAudio(updated.audio_url);
+          }
+        })
+        .finally(() => setRegenerating(false));
+      return;
+    }
     if (!message.audio_url) return;
     if (isPlayingThis) {
       pauseSharedAudio();
@@ -241,6 +268,27 @@ export function ChatBubble({
           >
             <Ionicons
               name={isPlayingThis ? 'pause-circle' : 'play-circle'}
+              size={24}
+              color={isMine ? 'rgba(255,255,255,0.95)' : colors.primary}
+            />
+          </Pressable>
+        )}
+        {/* audio-expiry sprint: sweep 으로 폐기된 메시지 — 재생성 버튼 노출.
+            로딩 중에는 hourglass, 평시에는 refresh 아이콘. handlePlayPress 가
+            isPurged 분기로 자동 분기되어 onRegenerateAudio 호출 후 재생까지. */}
+        {isPurged && (
+          <Pressable
+            onPress={handlePlayPress}
+            disabled={regenerating}
+            style={styles.audioBtn}
+            accessibilityRole="button"
+            accessibilityLabel={
+              regenerating ? t('chat.audio.regenerating') : t('chat.audio.regeneratePlay')
+            }
+            hitSlop={6}
+          >
+            <Ionicons
+              name={regenerating ? 'hourglass-outline' : 'refresh-circle'}
               size={24}
               color={isMine ? 'rgba(255,255,255,0.95)' : colors.primary}
             />

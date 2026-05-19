@@ -184,6 +184,31 @@ export function useChat(matchId: string) {
   // audio_url=null, audio_status='failed' 로 영구 저장되며 사용자는 동일 텍스트로
   // 새 메시지를 보내 재시도한다.
 
+  // audio-expiry sprint: sweep 이 폐기한 음성을 재합성 후 새 audio_url 로
+  // 메시지 row 를 갱신. 호출처(ChatBubble)는 응답 row 의 audio_url 로 즉시
+  // playSharedAudio. 실패 시 catch 에서 toast/inline 인디케이터 — 본 훅은
+  // throw 만 하고 ApiRequestError 변환은 호출처가 처리.
+  const regenerateAudio = useCallback(
+    async (messageId: string): Promise<Message | null> => {
+      try {
+        const updated = await messageService.regenerateMessageAudio(matchId, messageId);
+        // realtime UPDATE 도 곧 같은 row 를 머지하지만 즉시 재생을 위해 local
+        // state 도 동기 갱신. 동일 row 가 두 번 머지돼도 결과는 같다 (idempotent).
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? updated : m)),
+        );
+        return updated;
+      } catch (e) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[useChat] regenerateAudio ERROR', describeError(e));
+        }
+        return null;
+      }
+    },
+    [matchId],
+  );
+
   // Subscribe to Realtime + reconnect on foreground or after error
   useEffect(() => {
     let cancelled = false;
@@ -329,5 +354,7 @@ export function useChat(matchId: string) {
     // 재생 완료 시점에 발화된다. 송신자 본인 메시지에는 호출되지 않도록 호출처
     // (ChatBubble) 에서 isMine 분기 가드.
     markListened,
+    // audio-expiry sprint: ChatBubble 의 purged 분기에서 호출.
+    regenerateAudio,
   };
 }

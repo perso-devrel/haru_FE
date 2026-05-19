@@ -54,3 +54,16 @@ export async function markMessageListened(
     `/api/matches/${matchId}/messages/${messageId}/listened`,
   );
 }
+
+// audio-expiry sprint: sweep 이 청취 + 30일 경과로 폐기한 음성을 ElevenLabs
+// 로 on-demand 재합성. 매치 멤버 누구나 호출 가능 (송신자/수신자 본인 화면
+// 에서 재청취 가능해야 함). 응답은 audio_url 갱신된 Message row — 호출처는
+// 그 URL 로 즉시 playSharedAudio. 일반적으로 < 5초 소요 (Gemini + ElevenLabs).
+export async function regenerateMessageAudio(
+  matchId: string,
+  messageId: string,
+): Promise<Message> {
+  return api.post<Message>(
+    `/api/matches/${matchId}/messages/${messageId}/audio`,
+  );
+}

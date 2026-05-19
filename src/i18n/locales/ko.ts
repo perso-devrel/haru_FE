@@ -263,6 +263,30 @@ export default {
             origin: "국적",
             interests: "관심사",
         },
+        prompts: {
+            expandA11y: "대화 가이드 보기",
+            pageA11y: "{{current}}/{{total}} 가이드",
+            step1: {
+                title: "프로필을 열어 관심사를 살펴보세요.",
+                body: "대화의 시작점으론 충분해요.",
+            },
+            step2: {
+                title: "이번 주말엔 어떤 모드인가요?",
+                body: "집에서 에너지 충전 vs 밖에서 활력 충전",
+            },
+            step3: {
+                title: "요즘 무한 반복 중인 노래 있어요?",
+                body: "귀가 번쩍 뜨일 플레이리스트 교환하기",
+            },
+            step4: {
+                title: "과몰입 방지! 혹시 MBTI가 뭐예요?",
+                body: "닮아서 편할지, 달라서 짜릿할지 궁금해요",
+            },
+            step5: {
+                title: "올해 꼭 해내고 싶은 '단 하나'는?",
+                body: "마음속에 간직해 둔 설레는 계획 공유하기",
+            },
+        },
     },
 
     setupProfile: {

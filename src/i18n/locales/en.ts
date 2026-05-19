@@ -263,6 +263,30 @@ export default {
       origin: 'Origin',
       interests: 'Interests',
     },
+    prompts: {
+      expandA11y: 'View conversation guide',
+      pageA11y: 'Guide {{current}} of {{total}}',
+      step1: {
+        title: 'Open their profile and check their interests.',
+        body: 'Enough to start a conversation.',
+      },
+      step2: {
+        title: "What's your weekend mode?",
+        body: 'Charging at home vs powering up outside',
+      },
+      step3: {
+        title: 'Got a song on infinite repeat lately?',
+        body: "Swap playlists that'll wake your ears up",
+      },
+      step4: {
+        title: "Just for fun — what's your MBTI?",
+        body: "Curious if we'll click by being alike, or spark by being different",
+      },
+      step5: {
+        title: 'The one thing you want to do this year?',
+        body: "Share the exciting plan you've been holding close",
+      },
+    },
   },
 
   setupProfile: {

@@ -17,11 +17,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import CountryFlag from 'react-native-country-flag';
 import { useTranslation } from 'react-i18next';
+import * as SecureStore from 'expo-secure-store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeyboardState } from 'react-native-keyboard-controller';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { AudioPlayer } from '@/components/chat/AudioPlayer';
 import { IntimacyGauge } from '@/components/chat/IntimacyGauge';
+import { ChatPromptsModal } from '@/components/chat/ChatPromptsModal';
+import { ChatPromptsToggleButton } from '@/components/chat/ChatPromptsToggleButton';
 import { MatchActionsSheet } from '@/components/matches/MatchActionsSheet';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { useInterestResolver } from '@/hooks/useInterestLabel';
@@ -41,6 +44,7 @@ import { colors, gradients, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { DEFAULT_EMOTION } from '@/constants/emotions';
 import * as matchService from '@/services/matches';
+import { CHAT_PROMPTS_SEEN_KEY_PREFIX } from '@/constants/chatPrompts';
 import { calculateAge } from '@/utils/age';
 import { fromRoundTrips } from '@/constants/photoAccess';
 import { photoAccessStore } from '@/stores/photoAccess';
@@ -116,6 +120,13 @@ export default function ChatScreen() {
   const [muted, setMuted] = useState(false);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Conversation prompts surface: a round bulb button in the header right
+  // (next to the ⋮ menu) opens ChatPromptsModal as the single access path.
+  // No inline carousel — keeps the chat surface clean of permanent guide
+  // chrome and avoids the per-match collapse/expand state altogether.
+  // First-time entry to a match auto-opens the modal once (see the effect
+  // below); subsequent entries leave the user to tap the bulb explicitly.
+  const [promptsModalOpen, setPromptsModalOpen] = useState(false);
   // Photo-access unlock popup state. `unlockEvent` is null when there's no
   // pending announcement; set to 'main' or 'all' the moment the store flips
   // the corresponding flag from false -> true during this session.
@@ -241,6 +252,32 @@ export default function ChatScreen() {
   useEffect(() => {
     loadMessages();
   }, [loadMessages]);
+
+  // Auto-open the prompts modal on the user's first entry to this match.
+  // Gated on partner info having loaded (partnerId != null) so we don't
+  // pop the modal for a tombstone / unmatched match before the flags
+  // resolve. SecureStore key acts as a per-match "seen" flag — set the
+  // very first time we open, so subsequent re-entries skip the auto-open.
+  // Storage failures stay silent (no auto-open) — preferable to
+  // potentially re-popping the modal on every entry.
+  useEffect(() => {
+    if (!matchId || !partnerId || partnerDeleted || matchUnmatched) return;
+    let cancelled = false;
+    const key = `${CHAT_PROMPTS_SEEN_KEY_PREFIX}${matchId}`;
+    (async () => {
+      try {
+        const seen = await SecureStore.getItemAsync(key);
+        if (cancelled || seen === '1') return;
+        await SecureStore.setItemAsync(key, '1');
+        if (!cancelled) setPromptsModalOpen(true);
+      } catch {
+        // best-effort — silent
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId, partnerId, partnerDeleted, matchUnmatched]);
 
   // read-at-removal-list-mask sprint: 진입 시 일괄 markRead 효과 제거.
   // listened_at 단일 진실원으로 일원화되면서 채팅방 진입 = 읽음 의미가 사라졌고,
@@ -495,18 +532,29 @@ export default function ChatScreen() {
             ? t('common.deletedUser')
             : (partnerName ?? t('chat.title')),
           headerRight: () => (
-            <Pressable
-              onPress={() => setMenuOpen(true)}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.options')}
-              style={({ pressed }) => [
-                styles.headerMenuBtn,
-                pressed && { opacity: 0.6 },
-              ]}
-            >
-              <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
-            </Pressable>
+            <View style={styles.headerRightRow}>
+              {matchId && !partnerDeleted && !matchUnmatched && (
+                <ChatPromptsToggleButton
+                  onPress={() => setPromptsModalOpen(true)}
+                />
+              )}
+              <Pressable
+                onPress={() => setMenuOpen(true)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.options')}
+                style={({ pressed }) => [
+                  styles.headerMenuBtn,
+                  pressed && { opacity: 0.6 },
+                ]}
+              >
+                <Ionicons
+                  name="ellipsis-vertical"
+                  size={22}
+                  color={colors.text}
+                />
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -809,6 +857,11 @@ export default function ChatScreen() {
         </View>
       </Modal>
 
+      <ChatPromptsModal
+        visible={promptsModalOpen}
+        onClose={() => setPromptsModalOpen(false)}
+      />
+
       <MatchActionsSheet
         visible={menuOpen}
         matchId={matchId ?? null}
@@ -850,6 +903,10 @@ const styles = StyleSheet.create({
   headerMenuBtn: {
     paddingHorizontal: 8,
     paddingVertical: 4,
+  },
+  headerRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   list: {
     flex: 1,

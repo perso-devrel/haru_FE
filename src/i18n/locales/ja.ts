@@ -1,20 +1,11 @@
 export default {
+    // Spoken-language labels rendered by the profile/preference pickers.
+    // Keep in sync with `haru_FE/src/constants/languages.ts` SUPPORTED_LANGUAGES.
     languages: {
         ko: "한국어",
         en: "English",
         ja: "日本語",
-        zh: "中文",
-        es: "Español",
-        fr: "Français",
-        de: "Deutsch",
-        it: "Italiano",
-        pt: "Português",
-        ru: "Русский",
-        tr: "Türkçe",
-        vi: "Tiếng Việt",
         th: "ไทย",
-        tl: "Filipino",
-        id: "Bahasa Indonesia",
         hi: "हिन्दी",
     },
 

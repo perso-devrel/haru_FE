@@ -19,6 +19,13 @@ android/
 credentials/
 *.pem
 *.key
+
+# Android signing keystore — EAS-managed but downloaded backups must
+# never reach git. Losing this key = the app can never be updated again
+# (Play requires same signing key for all releases).
+*.jks
+*.keystore
+@*__*.jks
 # Firebase Admin SDK service account key — server secret, never commit.
 # (Public client identifiers like google-services.json / GoogleService-Info.plist
 # ARE committed because EAS Build only uploads git-tracked files and Firebase

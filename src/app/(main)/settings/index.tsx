@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -83,14 +83,6 @@ export default function SettingsScreen() {
             label={t('settings.languageSettings')}
             onPress={() => router.push('/(main)/settings/language')}
           />
-          <MenuCardButton
-            label={t('settings.termsOfService')}
-            onPress={() => Linking.openURL(LEGAL_URLS.terms)}
-          />
-          <MenuCardButton
-            label={t('settings.privacyPolicy')}
-            onPress={() => Linking.openURL(LEGAL_URLS.privacy)}
-          />
         </View>
         <Button
           title={t('common.logout')}
@@ -104,6 +96,21 @@ export default function SettingsScreen() {
           onPress={handleDeleteAccount}
           style={{ marginTop: 10 }}
         />
+        <View style={styles.legalLinks}>
+          <Text
+            style={styles.legalLink}
+            onPress={() => Linking.openURL(LEGAL_URLS.terms)}
+          >
+            {t('settings.termsOfService')}
+          </Text>
+          <Text style={styles.legalSeparator}> · </Text>
+          <Text
+            style={styles.legalLink}
+            onPress={() => Linking.openURL(LEGAL_URLS.privacy)}
+          >
+            {t('settings.privacyPolicy')}
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -113,4 +120,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20 },
   menuList: { gap: 10 },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  legalLink: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
 });

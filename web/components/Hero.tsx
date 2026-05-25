@@ -13,10 +13,10 @@ export default function Hero() {
           <span className="rounded-full border border-[color:var(--color-primary)]/30 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-primary-dark)] backdrop-blur">
             {t('eyebrow')}
           </span>
-          <h1 className="max-w-xl text-4xl font-semibold leading-[1.15] text-[color:var(--color-text)] md:text-5xl lg:text-6xl">
+          <h1 className="max-w-xl break-keep text-4xl font-semibold leading-[1.2] text-[color:var(--color-text)] md:text-5xl lg:text-6xl">
             {t('title')}
           </h1>
-          <p className="max-w-md text-lg leading-relaxed text-[color:var(--color-text-secondary)] md:text-xl">
+          <p className="max-w-md break-keep text-base leading-relaxed text-[color:var(--color-text-secondary)] md:text-lg">
             {t('subtitle')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">

@@ -23,10 +23,10 @@ export default function CrossLanguageSection() {
           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[color:var(--color-primary-dark)]">
             {t('eyebrow')}
           </span>
-          <h2 className="text-3xl font-semibold leading-tight text-[color:var(--color-text)] md:text-5xl">
+          <h2 className="break-keep text-3xl font-semibold leading-tight text-[color:var(--color-text)] md:text-4xl lg:text-5xl">
             {t('title')}
           </h2>
-          <p className="text-base leading-relaxed text-[color:var(--color-text-secondary)] md:text-lg">
+          <p className="break-keep text-base leading-relaxed text-[color:var(--color-text-secondary)] md:text-lg">
             {t('body')}
           </p>
           <ul className="mt-2 space-y-3">

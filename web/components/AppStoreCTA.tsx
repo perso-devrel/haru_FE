@@ -9,10 +9,10 @@ export default function AppStoreCTA() {
     <section className="mx-auto max-w-6xl px-6 pb-24 md:pb-32">
       <div className="relative overflow-hidden rounded-[40px] border border-[color:var(--color-border)] bg-white p-10 text-center shadow-glow md:p-16">
         <span className="aura" aria-hidden />
-        <h2 className="text-3xl font-semibold text-[color:var(--color-text)] md:text-5xl">
+        <h2 className="break-keep text-3xl font-semibold text-[color:var(--color-text)] md:text-4xl lg:text-5xl">
           {t('title')}
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-base text-[color:var(--color-text-secondary)] md:text-lg">
+        <p className="mx-auto mt-4 max-w-xl break-keep text-base text-[color:var(--color-text-secondary)] md:text-lg">
           {t('body')}
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

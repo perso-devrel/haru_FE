@@ -30,10 +30,10 @@ export default function SlowDatingSection() {
         <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[color:var(--color-primary-dark)]">
           {t('eyebrow')}
         </span>
-        <h2 className="mt-4 text-3xl font-semibold leading-tight text-[color:var(--color-text)] md:text-5xl">
+        <h2 className="mt-4 break-keep text-3xl font-semibold leading-tight text-[color:var(--color-text)] md:text-4xl lg:text-5xl">
           {t('title')}
         </h2>
-        <p className="mt-5 text-base leading-relaxed text-[color:var(--color-text-secondary)] md:text-lg">
+        <p className="mx-auto mt-5 max-w-2xl break-keep text-base leading-relaxed text-[color:var(--color-text-secondary)] md:text-lg">
           {t('subtitle')}
         </p>
       </div>
@@ -57,10 +57,10 @@ export default function SlowDatingSection() {
                 </span>
                 {t(`${row.key}.label`)}
               </span>
-              <h3 className="text-2xl font-semibold text-[color:var(--color-text)] md:text-3xl">
+              <h3 className="break-keep text-2xl font-semibold leading-snug text-[color:var(--color-text)] md:text-3xl">
                 {t(`${row.key}.title`)}
               </h3>
-              <p className="text-base leading-relaxed text-[color:var(--color-text-secondary)]">
+              <p className="break-keep text-base leading-relaxed text-[color:var(--color-text-secondary)]">
                 {t(`${row.key}.body`)}
               </p>
               <div className="mt-2 grid gap-2 rounded-2xl border border-[color:var(--color-border)] bg-white/70 p-4">

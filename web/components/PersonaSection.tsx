@@ -16,10 +16,10 @@ export default function PersonaSection() {
             <span className="text-xs font-semibold uppercase tracking-[0.25em] text-white/80">
               {t('eyebrow')}
             </span>
-            <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
+            <h2 className="break-keep text-3xl font-semibold leading-tight md:text-4xl lg:text-5xl">
               {t('title')}
             </h2>
-            <p className="text-base leading-relaxed text-white/85 md:text-lg">
+            <p className="break-keep text-base leading-relaxed text-white/85 md:text-lg">
               {t('body')}
             </p>
             <p className="text-sm leading-relaxed text-white/70">

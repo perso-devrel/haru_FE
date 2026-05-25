@@ -26,6 +26,12 @@ credentials/
 # client config.)
 *-firebase-adminsdk-*.json
 
+# Google Play Store API service account JSON (for `eas submit`). Granted
+# Play-Developer permissions, so leaking it lets attackers push builds and
+# change store listings — never commit.
+play-service-account*.json
+google-play-service-account*.json
+
 # IDE / tooling
 .vscode/
 .idea/

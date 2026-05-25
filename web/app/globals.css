@@ -1,10 +1,84 @@
 @import "tailwindcss";
 
+@theme {
+  /* Mirror of the mobile app palette (haru_FE/src/constants/colors.ts).
+     Keeping the same brand tokens here avoids a drifted "marketing look"
+     when prospects land in the app right after seeing the page. */
+  --color-bg: #FFF4EE;
+  --color-surface: #FDE7EE;
+  --color-card: #FFFAFA;
+  --color-card-alt: #FFF0F3;
+
+  --color-primary: #E27AA0;
+  --color-primary-light: #FBDCE6;
+  --color-primary-dark: #B85478;
+  --color-secondary: #F6B5C8;
+  --color-accent: #FFCBA4;
+  --color-lavender: #B8A1C8;
+
+  --color-text: #3A2340;
+  --color-text-secondary: #7A5F76;
+  --color-text-light: #C8ADBA;
+  --color-border: #F4DCE3;
+  --color-border-soft: #FBE8EF;
+
+  --color-like: #FF5D87;
+}
+
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
 body {
   height: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Sunset gradient used by the hero — defined here so multiple sections can
+   layer it (background + soft-glow accents) without repeating the stops. */
+.bg-sunset {
+  background: linear-gradient(
+    140deg,
+    #FFE8CC 0%,
+    #FFC1A6 25%,
+    #E27AA0 55%,
+    #8A5A8C 80%,
+    #3D2347 100%
+  );
+}
+
+.bg-dawn {
+  background: linear-gradient(180deg, #FFF4EE 0%, #FDE1E8 60%, #F3E0F0 100%);
+}
+
+.bg-primary-gradient {
+  background: linear-gradient(135deg, #F6B5C8 0%, #E27AA0 100%);
+}
+
+/* Soft outer glow used on the phone mockup so it feels like it's floating
+   on a warm twilight surface, not pasted onto the page. */
+.shadow-glow {
+  box-shadow:
+    0 30px 80px -20px rgba(226, 122, 160, 0.45),
+    0 12px 32px -8px rgba(58, 35, 64, 0.18);
+}
+
+/* Subtle blur ring behind the phone — sits below the device frame. */
+.aura {
+  position: absolute;
+  inset: -8% -10%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 193, 166, 0.55) 0%,
+    rgba(226, 122, 160, 0.35) 35%,
+    rgba(255, 244, 238, 0) 70%
+  );
+  filter: blur(40px);
+  z-index: -1;
 }

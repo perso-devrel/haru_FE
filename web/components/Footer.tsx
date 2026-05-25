@@ -9,23 +9,28 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-zinc-800 bg-zinc-950 px-6 py-8 text-center text-xs text-zinc-500">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-2 sm:flex-row sm:gap-4">
-        <Link
-          href={`${prefix}/terms`}
-          className="hover:text-zinc-300 hover:underline"
-        >
-          {t('terms')}
-        </Link>
-        <span className="hidden text-zinc-700 sm:inline">·</span>
-        <Link
-          href={`${prefix}/privacy`}
-          className="hover:text-zinc-300 hover:underline"
-        >
-          {t('privacy')}
-        </Link>
-        <span className="hidden text-zinc-700 sm:inline">·</span>
-        <span>© {year} haru</span>
+    <footer className="border-t border-[color:var(--color-border)] bg-white/60 px-6 py-10 text-center text-xs text-[color:var(--color-text-secondary)] backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3">
+        <p className="text-sm font-semibold text-[color:var(--color-primary-dark)]">
+          haru
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5">
+          <Link
+            href={`${prefix}/terms`}
+            className="transition hover:text-[color:var(--color-primary-dark)] hover:underline"
+          >
+            {t('terms')}
+          </Link>
+          <span className="text-[color:var(--color-text-light)]">·</span>
+          <Link
+            href={`${prefix}/privacy`}
+            className="transition hover:text-[color:var(--color-primary-dark)] hover:underline"
+          >
+            {t('privacy')}
+          </Link>
+          <span className="text-[color:var(--color-text-light)]">·</span>
+          <span>© {year} haru</span>
+        </div>
       </div>
     </footer>
   );

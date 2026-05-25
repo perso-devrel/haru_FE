@@ -28,5 +28,16 @@
     "appStore": "Download on the App Store",
     "playStore": "Get it on Google Play",
     "disclaimer": "Must be 18 or older."
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy — haru",
+      "description": "How haru collects, uses, retains, and shares your data with third parties."
+    },
+    "terms": {
+      "title": "Terms of Service — haru",
+      "description": "Terms of use, member obligations, content moderation, and liability for haru."
+    },
+    "localeNotice": "Only the Korean source text is currently available. Translations will be provided after launch."
   }
 }

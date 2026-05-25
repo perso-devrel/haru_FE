@@ -28,5 +28,16 @@
     "appStore": "App Store からダウンロード",
     "playStore": "Google Play で入手",
     "disclaimer": "18歳以上の方のみご利用いただけます。"
+  },
+  "legal": {
+    "privacy": {
+      "title": "プライバシーポリシー — haru",
+      "description": "haru サービスの個人情報の収集・利用・保存および第三者委託に関するポリシー。"
+    },
+    "terms": {
+      "title": "利用規約 — haru",
+      "description": "haru サービスの利用条件、会員の義務、コンテンツモデレーション、責任範囲。"
+    },
+    "localeNotice": "現在は韓国語原文のみ提供されています。翻訳版はリリース後に順次提供予定です。"
   }
 }

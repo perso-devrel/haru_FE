@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 
 const PLAY_STORE_URL =
-  'https://play.google.com/store/apps/details?id=com.voicemate.app';
+  'https://play.google.com/store/apps/details?id=com.haruvoice.app';
 
 export default function AppStoreCTA() {
   const t = useTranslations('cta');

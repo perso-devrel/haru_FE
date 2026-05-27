@@ -67,6 +67,10 @@
       "title": "이용약관 — haru",
       "description": "haru 서비스 이용 조건, 회원 의무, 콘텐츠 모더레이션 및 책임 한계."
     },
+    "accountDeletion": {
+      "title": "계정 삭제 안내 — haru",
+      "description": "haru 서비스의 계정 삭제 절차 및 삭제·보관 데이터 안내."
+    },
     "localeNotice": "현재 한국어 원문만 제공됩니다. 번역본은 출시 후 순차 제공 예정입니다."
   },
   "authCallback": {

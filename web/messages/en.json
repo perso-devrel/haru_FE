@@ -67,6 +67,10 @@
       "title": "Terms of Service — haru",
       "description": "Terms of use, member obligations, content moderation, and liability for haru."
     },
+    "accountDeletion": {
+      "title": "Account Deletion — haru",
+      "description": "How to delete your haru account and what data is removed, retained, or anonymized."
+    },
     "localeNotice": "Only the Korean source text is currently available. Translations will be provided after launch."
   },
   "authCallback": {

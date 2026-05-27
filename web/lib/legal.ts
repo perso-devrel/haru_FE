@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { AppLocale } from '@/i18n/routing';
 
-export type LegalDoc = 'terms' | 'privacy';
+export type LegalDoc = 'terms' | 'privacy' | 'account-deletion';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content', 'legal');
 
@@ -22,5 +22,6 @@ export async function loadLegalMarkdown(
 }
 
 export function isLocalizedAvailable(doc: LegalDoc, locale: AppLocale): boolean {
+  if (doc === 'account-deletion') return true;
   return locale === 'ko';
 }

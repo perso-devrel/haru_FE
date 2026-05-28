@@ -248,7 +248,6 @@ export default {
             regeneratePlay: "음성을 다시 만들고 재생",
         },
         intimacy: "친밀도",
-        intimacyUntilMain: "메인 사진 공개까지 {{count}}회",
         intimacyUntilAll: "모든 사진 공개까지 {{count}}회",
         intimacyAllUnlocked: "모든 사진 공개",
         swipeForMore: "옆으로 넘겨 더 보기",

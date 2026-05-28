@@ -248,7 +248,6 @@ export default {
       regeneratePlay: 'Regenerate and play voice',
     },
     intimacy: 'Intimacy',
-    intimacyUntilMain: '{{count}} more to unlock main photo',
     intimacyUntilAll: '{{count}} more to unlock all photos',
     intimacyAllUnlocked: 'All photos unlocked',
     swipeForMore: 'Swipe for more',

@@ -247,7 +247,6 @@ export default {
             regeneratePlay: "音声を再生成して再生",
         },
         intimacy: "親密度",
-        intimacyUntilMain: "メイン写真公開まであと{{count}}回",
         intimacyUntilAll: "すべての写真公開まであと{{count}}回",
         intimacyAllUnlocked: "すべての写真が公開されました",
         swipeForMore: "横にスワイプしてもっと見る",

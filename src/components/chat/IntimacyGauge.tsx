@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, gradients, radii } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
-import { UNLOCK_MAIN_PHOTO_AT, UNLOCK_ALL_PHOTOS_AT } from '@/utils/chat';
+import { UNLOCK_ALL_PHOTOS_AT } from '@/utils/chat';
 
 interface IntimacyGaugeProps {
   roundTrips: number;
@@ -15,14 +15,12 @@ export function IntimacyGauge({ roundTrips }: IntimacyGaugeProps) {
   const clamped = Math.min(roundTrips, UNLOCK_ALL_PHOTOS_AT);
   const progress = clamped / UNLOCK_ALL_PHOTOS_AT;
 
-  let hint: string;
-  if (roundTrips >= UNLOCK_ALL_PHOTOS_AT) {
-    hint = t('chat.intimacyAllUnlocked');
-  } else if (roundTrips >= UNLOCK_MAIN_PHOTO_AT) {
-    hint = t('chat.intimacyUntilAll', { count: UNLOCK_ALL_PHOTOS_AT - roundTrips });
-  } else {
-    hint = t('chat.intimacyUntilMain', { count: UNLOCK_MAIN_PHOTO_AT - roundTrips });
-  }
+  // photo-watercolor-pipeline sprint 후 UNLOCK_MAIN === UNLOCK_ALL — 5회 중간
+  // milestone 사라짐. 10회 도달 시 원본 5장 동시 공개. 단일 카피로 단순화.
+  const hint =
+    roundTrips >= UNLOCK_ALL_PHOTOS_AT
+      ? t('chat.intimacyAllUnlocked')
+      : t('chat.intimacyUntilAll', { count: UNLOCK_ALL_PHOTOS_AT - roundTrips });
 
   return (
     <View style={styles.container}>
@@ -44,14 +42,6 @@ export function IntimacyGauge({ roundTrips }: IntimacyGaugeProps) {
             style={styles.fill}
           />
         </View>
-        {/* Milestone markers at 5/10 */}
-        <View
-          style={[
-            styles.milestone,
-            { left: `${(UNLOCK_MAIN_PHOTO_AT / UNLOCK_ALL_PHOTOS_AT) * 100}%` },
-            roundTrips >= UNLOCK_MAIN_PHOTO_AT && styles.milestoneReached,
-          ]}
-        />
       </View>
     </View>
   );
@@ -101,17 +91,5 @@ const styles = StyleSheet.create({
   },
   fill: {
     flex: 1,
-  },
-  milestone: {
-    position: 'absolute',
-    top: -2,
-    width: 3,
-    height: 12,
-    marginLeft: -1.5,
-    borderRadius: 2,
-    backgroundColor: colors.borderSoft,
-  },
-  milestoneReached: {
-    backgroundColor: colors.primaryDark,
   },
 });

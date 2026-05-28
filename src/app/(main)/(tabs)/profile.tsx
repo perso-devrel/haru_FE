@@ -16,12 +16,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import CountryFlag from 'react-native-country-flag';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { VoiceIntroMultiLangPreview } from '@/components/profile/VoiceIntroMultiLangPreview';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
 import { useProfile, MAX_PHOTOS } from '@/hooks/useProfile';
+import { downloadWatermarkedPhoto } from '@/services/profile';
 import { VOICE_INTRO_SLOT_LANGUAGES, type PhotoStatus, type PhotoConversionStatus } from '@/types';
 import { useInterestResolver } from '@/hooks/useInterestLabel';
 import { showAlert } from '@/stores/alertStore';
@@ -39,6 +41,11 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
+  // Photo preview in the action sheet. The sheetGroup is constrained to this
+  // same width so the photo and the action buttons share one column. 3:4
+  // portrait to match the grid.
+  const PREVIEW_WIDTH = Math.round(SCREEN_WIDTH * 0.82);
+  const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * 4) / 3);
   const GRID_WIDTH = SCREEN_WIDTH - 32; // matches contentContainerStyle padding (16 * 2)
   // Main fills half the grid width; the remaining half is split evenly across
   // the two thumbnail columns. main + 4 thumbs = MAX_PHOTOS=5.
@@ -232,6 +239,33 @@ export default function ProfileScreen() {
     closeSheet();
     if (index === null) return;
     action(index);
+  };
+
+  const handleDownloadPhoto = async (position: number) => {
+    try {
+      // writeOnly=true 로 갤러리 저장 권한만 요청 (사진 읽기 권한은 ImagePicker
+      // 가 별도 관리). iOS 14+ 의 limited photos selection 도 saveToLibrary
+      // 단독으론 read 권한 요구 안 함.
+      const perm = await MediaLibrary.requestPermissionsAsync(true);
+      if (perm.status !== 'granted') {
+        showAlert({
+          variant: 'error',
+          title: t('profile.downloadFailed'),
+          message: t('profile.downloadPermissionDenied'),
+        });
+        return;
+      }
+      // BE 가 우하단 "haru" 워터마크를 합성한 JPEG 사본을 로컬 캐시에 내려준다.
+      const localUri = await downloadWatermarkedPhoto(position);
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      showAlert({ variant: 'info', title: t('profile.downloadSuccess') });
+    } catch (e: any) {
+      showAlert({
+        variant: 'error',
+        title: t('profile.downloadFailed'),
+        message: e?.message,
+      });
+    }
   };
 
   if (!profile) {
@@ -617,10 +651,33 @@ export default function ProfileScreen() {
         onRequestClose={closeSheet}
       >
         <Pressable
-          style={[styles.sheetBackdrop, { paddingBottom: 12 + insets.bottom }]}
+          style={[styles.sheetBackdrop, { paddingBottom: 12 + insets.bottom, paddingTop: 12 + insets.top }]}
           onPress={closeSheet}
         >
-          <Pressable style={styles.sheetGroup} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheetGroup, { width: PREVIEW_WIDTH }]} onPress={(e) => e.stopPropagation()}>
+            {activePhotoIndex !== null && readyUrlByPosition.get(activePhotoIndex) ? (
+              <View style={[styles.sheetPreviewBox, { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }]}>
+                <Image
+                  source={{ uri: bustUri(readyUrlByPosition.get(activePhotoIndex)!) }}
+                  style={styles.sheetPreviewImage}
+                  resizeMode="cover"
+                />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.previewDownloadBtn,
+                    pressed && styles.previewDownloadBtnPressed,
+                  ]}
+                  onPress={() => {
+                    if (activePhotoIndex !== null) handleDownloadPhoto(activePhotoIndex);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('profile.downloadPhoto')}
+                  hitSlop={8}
+                >
+                  <Ionicons name="download-outline" size={22} color={colors.white} />
+                </Pressable>
+              </View>
+            ) : null}
             <View style={styles.sheet}>
               {activePhotoIndex !== null && activePhotoIndex !== 0 && (
                 <Pressable
@@ -631,7 +688,11 @@ export default function ProfileScreen() {
                 </Pressable>
               )}
               <Pressable
-                style={({ pressed }) => [styles.sheetBtn, styles.sheetBtnBordered, pressed && styles.sheetBtnPressed]}
+                style={({ pressed }) => [
+                  styles.sheetBtn,
+                  activePhotoIndex !== 0 && styles.sheetBtnBordered,
+                  pressed && styles.sheetBtnPressed,
+                ]}
                 onPress={() => runSheetAction(handleEditPhoto)}
               >
                 <Text style={styles.sheetBtnText}>{t('profile.editPhoto')}</Text>
@@ -922,12 +983,37 @@ const styles = StyleSheet.create({
   sheetBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingTop: 12,
     paddingHorizontal: 12,
   },
   sheetGroup: {
+    alignSelf: 'center',
     gap: 10,
+  },
+  sheetPreviewBox: {
+    alignSelf: 'center',
+    borderRadius: radii.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.cardAlt,
+  },
+  sheetPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  previewDownloadBtn: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewDownloadBtnPressed: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   sheet: {
     borderRadius: radii.lg,
@@ -936,7 +1022,7 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   sheetBtn: {
-    paddingVertical: 18,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -957,7 +1043,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   sheetCancel: {
-    paddingVertical: 18,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -79,3 +79,20 @@ export async function retryPhotoConversion(photoId: string): Promise<{
 }> {
   return api.post(`/api/profile/photos/${photoId}/retry`);
 }
+
+// 워터마크 다운로드: BE 가 우하단 "haru" 워터마크를 합성한 JPEG 사본을 반환한다.
+// 로컬 캐시에 받아 그 파일 경로를 돌려주며, 호출처가 MediaLibrary 로 갤러리에
+// 저장한다. position 은 profile_photos.position (= 프로필 그리드 슬롯 인덱스).
+export async function downloadWatermarkedPhoto(position: number): Promise<string> {
+  const token = await getAccessToken();
+  const cachePath = `${FileSystem.cacheDirectory}haru-photo-${Date.now()}.jpg`;
+  const dl = await FileSystem.downloadAsync(
+    `${API_BASE_URL}/api/profile/photos/${position}/download`,
+    cachePath,
+    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+  );
+  if (dl.status < 200 || dl.status >= 300) {
+    throw new ApiRequestError(dl.status, 'Download failed');
+  }
+  return dl.uri;
+}

@@ -231,6 +231,10 @@ export default {
         photoConversionFailed: "変換失敗。もう一度お試しください。",
         photoBlocked: "この写真は使用できません。別の写真を選択してください。",
         photoRetry: "再試行",
+        downloadPhoto: "写真を保存",
+        downloadSuccess: "写真をギャラリーに保存しました。",
+        downloadFailed: "写真の保存に失敗しました。",
+        downloadPermissionDenied: "写真を保存するにはギャラリーへのアクセス許可が必要です。",
     },
 
     chat: {

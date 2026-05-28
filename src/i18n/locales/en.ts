@@ -232,6 +232,10 @@ export default {
     photoConversionFailed: 'Conversion failed. Please try again.',
     photoBlocked: "This photo can't be used. Please choose another.",
     photoRetry: 'Retry',
+    downloadPhoto: 'Save photo',
+    downloadSuccess: 'Photo saved to your gallery.',
+    downloadFailed: 'Failed to save photo.',
+    downloadPermissionDenied: 'Gallery access is required to save photos.',
   },
 
   chat: {

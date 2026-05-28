@@ -52,6 +52,14 @@
                 }
             ],
             [
+                "expo-media-library",
+                {
+                    "photosPermission": "Allow haru to save profile photos to your gallery.",
+                    "savePhotosPermission": "Allow haru to save profile photos to your gallery.",
+                    "isAccessMediaLocationEnabled": false
+                }
+            ],
+            [
                 "expo-audio",
                 {
                     "microphonePermission": "Allow haru to access your microphone to record voice samples."

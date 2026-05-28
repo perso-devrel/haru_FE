@@ -232,6 +232,10 @@ export default {
         photoConversionFailed: "변환 실패. 다시 시도해주세요.",
         photoBlocked: "이 사진은 사용할 수 없어요. 다른 사진을 선택해주세요.",
         photoRetry: "다시 시도",
+        downloadPhoto: "사진 저장",
+        downloadSuccess: "사진을 갤러리에 저장했어요.",
+        downloadFailed: "사진 저장에 실패했어요.",
+        downloadPermissionDenied: "사진을 저장하려면 갤러리 접근 권한이 필요해요.",
     },
 
     chat: {

@@ -549,18 +549,7 @@ export default {
     },
 
     photoAccess: {
-        locked: {
-            hint: "まずは声で知り合いましょう",
-            a11y: "ロックされたプロフィール写真",
-        },
-        allPhotosLocked: {
-            placeholder: "会話を続けるほど写真が公開されます",
-        },
         unlocked: {
-            main: {
-                title: "メイン写真が公開されました！",
-                description: "{{name}}さんのメイン写真が公開されました。会話を続けると追加の写真も見られます。",
-            },
             all: {
                 title: "すべての写真が公開されました！",
                 description: "{{name}}さんが登録したすべての写真を見ることができます。",

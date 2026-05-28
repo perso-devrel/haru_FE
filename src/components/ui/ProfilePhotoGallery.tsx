@@ -2,22 +2,14 @@ import { useState } from 'react';
 import {
   View,
   Image,
-  Text,
   StyleSheet,
   FlatList,
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import { usePhotoAccess } from '@/hooks/usePhotoAccess';
-import { colors, radii } from '@/constants/colors';
-import { fonts } from '@/constants/fonts';
-
-// Matches DETAIL_BLUR in ProfilePhoto so a locked main photo reads the same
-// whether it's rendered here or via <ProfilePhoto variant="detail" />.
-const DETAIL_BLUR = 40;
+import { colors } from '@/constants/colors';
 
 interface ProfilePhotoGalleryProps {
   // Registry key for photo-access lookup.
@@ -27,12 +19,10 @@ interface ProfilePhotoGalleryProps {
 }
 
 // Horizontal-paging photo carousel used in the chat-screen partner modal.
-// photos[0] is the first slide (main photo), and additional photos become
-// reachable by swiping sideways only once `all_photos_unlocked` flips true
-// (10 round-trip unlock). With a single photo or while still locked, paging
-// is disabled so the card feels static — no phantom slides to swipe to.
+// photo-watercolor-pipeline sprint 후 메인 사진(변환본)은 항상 클리어 노출 —
+// 디스커버부터 채팅까지 동일 변환본. 10 라운드트립 도달 시 원본 5장 추가 carousel.
+// photos.length=1 또는 미도달이면 paging 비활성 (phantom slide 회피).
 export function ProfilePhotoGallery({ userId, photos }: ProfilePhotoGalleryProps) {
-  const { t } = useTranslation();
   const access = usePhotoAccess(userId);
   const [width, setWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -41,7 +31,6 @@ export function ProfilePhotoGallery({ userId, photos }: ProfilePhotoGalleryProps
     return null;
   }
 
-  const mainBlurred = !access.main_photo_unlocked;
   const canSwipe = access.all_photos_unlocked && photos.length > 1;
   const visiblePhotos = canSwipe ? photos : [photos[0]];
 
@@ -56,27 +45,11 @@ export function ProfilePhotoGallery({ userId, photos }: ProfilePhotoGalleryProps
     if (idx !== activeIndex) setActiveIndex(idx);
   };
 
-  const renderItem = ({ item, index }: { item: string; index: number }) => {
-    const blurred = index === 0 && mainBlurred;
-    return (
-      <View style={[styles.slide, { width }]}>
-        <Image
-          source={{ uri: item }}
-          style={styles.photo}
-          resizeMode="cover"
-          blurRadius={blurred ? DETAIL_BLUR : 0}
-        />
-        {blurred ? (
-          <View style={styles.lockRow} pointerEvents="none">
-            <Ionicons name="lock-closed" size={14} color={colors.white} />
-            <Text style={styles.lockText} numberOfLines={1}>
-              {t('photoAccess.locked.hint')}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    );
-  };
+  const renderItem = ({ item }: { item: string; index: number }) => (
+    <View style={[styles.slide, { width }]}>
+      <Image source={{ uri: item }} style={styles.photo} resizeMode="cover" />
+    </View>
+  );
 
   return (
     <View onLayout={onLayout} style={styles.container}>
@@ -120,28 +93,6 @@ const styles = StyleSheet.create({
   photo: {
     width: '100%',
     height: '100%',
-  },
-  lockRow: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.pill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignSelf: 'center',
-    justifyContent: 'center',
-  },
-  lockText: {
-    fontSize: 12,
-    color: colors.white,
-    fontFamily: fonts.medium,
-    letterSpacing: 0.2,
-    flexShrink: 1,
   },
   dots: {
     position: 'absolute',

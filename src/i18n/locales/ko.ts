@@ -550,18 +550,7 @@ export default {
     },
 
     photoAccess: {
-        locked: {
-            hint: "음성으로 먼저 알아가요",
-            a11y: "잠긴 프로필 사진",
-        },
-        allPhotosLocked: {
-            placeholder: "대화를 나눌수록 더 많은 사진이 공개돼요",
-        },
         unlocked: {
-            main: {
-                title: "메인 사진 공개!",
-                description: "{{name}}님의 메인 사진이 공개됐어요. 계속 대화하면 추가 사진도 볼 수 있어요.",
-            },
             all: {
                 title: "모든 사진 공개!",
                 description: "{{name}}님의 등록된 모든 사진을 볼 수 있어요.",

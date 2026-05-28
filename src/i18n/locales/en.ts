@@ -548,18 +548,7 @@ export default {
   },
 
   photoAccess: {
-    locked: {
-      hint: "Get to know their voice first",
-      a11y: 'Locked profile photo',
-    },
-    allPhotosLocked: {
-      placeholder: 'More photos unlock as you chat',
-    },
     unlocked: {
-      main: {
-        title: 'Main Photo Unlocked!',
-        description: "You can now see {{name}}'s main photo. Keep chatting to unlock more photos.",
-      },
       all: {
         title: 'All Photos Unlocked!',
         description: "You can now see all of {{name}}'s photos.",

@@ -130,7 +130,7 @@ export default function ChatScreen() {
   // Photo-access unlock popup state. `unlockEvent` is null when there's no
   // pending announcement; set to 'main' or 'all' the moment the store flips
   // the corresponding flag from false -> true during this session.
-  const [unlockEvent, setUnlockEvent] = useState<'main' | 'all' | null>(null);
+  const [unlockEvent, setUnlockEvent] = useState<'all' | null>(null);
 
   // push-notifications follow-up: 이 매치의 채팅창이 활성화된 동안 활성 ref 를
   // 설정하면 _layout.tsx 의 setNotificationHandler 가 동일 match_id 푸시를 OS
@@ -421,8 +421,8 @@ export default function ChatScreen() {
       prevAccessRef.current = access;
       return;
     }
-    // Pick 'all' over 'main' when both transitioned in the same tick —
-    // 'all' is the strictly stronger announcement and already implies main.
+    // photo-watercolor-pipeline sprint 후 UNLOCK_MAIN === UNLOCK_ALL — 둘 다 같은
+    // tick 에 transit. 옛 main-only 분기는 사실상 도달 0 (5회 단계 사라짐).
     if (!prev.all_photos_unlocked && access.all_photos_unlocked) {
       setUnlockEvent('all');
       // partnerPhotos was seeded at mount with the BE-sliced single-photo
@@ -440,8 +440,6 @@ export default function ChatScreen() {
           // best-effort — next chat re-entry will pick up the full list
         }
       })();
-    } else if (!prev.main_photo_unlocked && access.main_photo_unlocked) {
-      setUnlockEvent('main');
     }
     prevAccessRef.current = access;
   }, [partnerId, access, matchId]);
@@ -454,14 +452,8 @@ export default function ChatScreen() {
     const name = partnerName || fallbackName;
     showAlert({
       variant: 'info',
-      title:
-        unlockEvent === 'all'
-          ? t('photoAccess.unlocked.all.title')
-          : t('photoAccess.unlocked.main.title'),
-      message:
-        unlockEvent === 'all'
-          ? t('photoAccess.unlocked.all.description', { name })
-          : t('photoAccess.unlocked.main.description', { name }),
+      title: t('photoAccess.unlocked.all.title'),
+      message: t('photoAccess.unlocked.all.description', { name }),
       confirmText: t('photoAccess.unlocked.confirm'),
     });
     setUnlockEvent(null);

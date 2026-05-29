@@ -22,6 +22,7 @@ export async function loadLegalMarkdown(
 }
 
 export function isLocalizedAvailable(doc: LegalDoc, locale: AppLocale): boolean {
-  if (doc === 'account-deletion') return true;
-  return locale === 'ko';
+  // terms is still ko-only; privacy and account-deletion are fully localized (ko/en/ja).
+  if (doc === 'terms') return locale === 'ko';
+  return true;
 }

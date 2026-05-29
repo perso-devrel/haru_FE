@@ -11,11 +11,8 @@ const LABELS: Record<AppLocale, string> = {
   en: 'English',
 };
 
-// User asked for KO/JA only in the switcher; English remains in the
-// routing table (used by /privacy etc.) but is intentionally not exposed
-// here. If a visitor is currently on /en, we still show the dropdown but
-// don't surface /en as an option.
-const VISIBLE_LOCALES: readonly AppLocale[] = ['ko', 'ja'];
+// Surface all three supported locales. Order: Korean, English, Japanese.
+const VISIBLE_LOCALES: readonly AppLocale[] = ['ko', 'en', 'ja'];
 
 /**
  * Rewrite the current pathname for a target locale, respecting

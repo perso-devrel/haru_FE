@@ -546,6 +546,7 @@ export default {
     languageSettings: {
         title: "言語設定",
         subtitle: "アプリで使用する言語を選んでください。",
+        systemDefault: "端末の設定に従う",
     },
 
     audioPlayer: {

@@ -545,6 +545,7 @@ export default {
   languageSettings: {
     title: 'Language',
     subtitle: 'Choose the language you want to use in the app.',
+    systemDefault: 'System default',
   },
 
   audioPlayer: {

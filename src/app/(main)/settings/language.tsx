@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,21 +7,47 @@ import { useTranslation } from 'react-i18next';
 import { WizardHeader } from '@/components/setup/WizardHeader';
 import {
   setAppLanguage,
+  clearAppLanguage,
+  getStoredLanguageOverride,
+  getSystemLanguage,
   SUPPORTED_APP_LANGUAGES,
   type SupportedLanguage,
 } from '@/i18n';
 import { colors, radii } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 
-export default function LanguageSettingsScreen() {
-  const { t, i18n } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const current = i18n.language as SupportedLanguage;
+// 'system' = follow the device language; otherwise an explicit override.
+type Selection = 'system' | SupportedLanguage;
 
-  const handleSelect = async (lang: SupportedLanguage) => {
-    if (lang === current) return;
+export default function LanguageSettingsScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const [selection, setSelection] = useState<Selection>('system');
+  const systemLanguage = getSystemLanguage();
+
+  useEffect(() => {
+    let mounted = true;
+    getStoredLanguageOverride().then((stored) => {
+      if (mounted) setSelection(stored ?? 'system');
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSelectSystem = async () => {
+    if (selection === 'system') return;
+    setSelection('system');
+    await clearAppLanguage();
+  };
+
+  const handleSelectLanguage = async (lang: SupportedLanguage) => {
+    if (selection === lang) return;
+    setSelection(lang);
     await setAppLanguage(lang);
   };
+
+  const systemSelected = selection === 'system';
 
   return (
     <View style={styles.container}>
@@ -32,12 +59,32 @@ export default function LanguageSettingsScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}>
         <Text style={styles.subtitle}>{t('languageSettings.subtitle')}</Text>
         <View style={styles.list}>
+          <Pressable
+            onPress={handleSelectSystem}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: systemSelected }}
+            style={({ pressed }) => [
+              styles.row,
+              systemSelected && styles.rowSelected,
+              pressed && styles.rowPressed,
+            ]}
+          >
+            <View style={styles.rowTextGroup}>
+              <Text style={[styles.label, systemSelected && styles.labelSelected]}>
+                {t('languageSettings.systemDefault')}
+              </Text>
+              <Text style={styles.sublabel}>{t(`languages.${systemLanguage}`)}</Text>
+            </View>
+            {systemSelected && (
+              <Ionicons name="checkmark" size={20} color={colors.primary} />
+            )}
+          </Pressable>
           {SUPPORTED_APP_LANGUAGES.map((code) => {
-            const selected = code === current;
+            const selected = selection === code;
             return (
               <Pressable
                 key={code}
-                onPress={() => handleSelect(code)}
+                onPress={() => handleSelectLanguage(code)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 style={({ pressed }) => [
@@ -90,6 +137,9 @@ const styles = StyleSheet.create({
   rowPressed: {
     opacity: 0.85,
   },
+  rowTextGroup: {
+    gap: 2,
+  },
   label: {
     fontSize: 15,
     fontFamily: fonts.semibold,
@@ -98,5 +148,10 @@ const styles = StyleSheet.create({
   },
   labelSelected: {
     color: colors.primary,
+  },
+  sublabel: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
   },
 });

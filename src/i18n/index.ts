@@ -52,6 +52,29 @@ export async function setAppLanguage(lang: SupportedLanguage) {
   await SecureStore.setItemAsync(LANG_KEY, lang);
 }
 
+// Drop the explicit override so the app tracks the device system language
+// again (now and on every future boot).
+export async function clearAppLanguage() {
+  await SecureStore.deleteItemAsync(LANG_KEY);
+  await i18n.changeLanguage(detectSystemLanguage());
+}
+
+// Returns the language the user explicitly picked in settings, or null when
+// the app is following the system language.
+export async function getStoredLanguageOverride(): Promise<SupportedLanguage | null> {
+  try {
+    const stored = await SecureStore.getItemAsync(LANG_KEY);
+    return isSupported(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+// The language the device system locale currently resolves to.
+export function getSystemLanguage(): SupportedLanguage {
+  return detectSystemLanguage();
+}
+
 export const SUPPORTED_APP_LANGUAGES = SUPPORTED;
 
 export default i18n;

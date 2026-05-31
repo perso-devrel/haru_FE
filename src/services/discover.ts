@@ -13,7 +13,10 @@ export async function getReceivedLikes(): Promise<DiscoverCandidate[]> {
 }
 
 export async function swipe(data: SwipeRequest): Promise<SwipeResponse> {
-  return api.post<SwipeResponse>('/api/discover/swipe', data);
+  // tz_offset_minutes 는 BE 서버측 일일 한도 하드 캡이 사용자 로컬 자정 경계를
+  // quota 엔드포인트와 동일하게 계산하도록 전달 (getDiscoverQuota 와 동일 의미).
+  const tz = new Date().getTimezoneOffset();
+  return api.post<SwipeResponse>(`/api/discover/swipe?tz_offset_minutes=${tz}`, data);
 }
 
 // BE 가 sources of truth 로 들고 있는 "오늘 스와이프 수" 를 가져온다 (기기 간 동기화).

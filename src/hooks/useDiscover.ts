@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Image } from 'react-native';
 import { useSWRConfig } from 'swr';
 import * as discoverService from '@/services/discover';
+import { ApiRequestError } from '@/services/api';
 import { photoAccessStore } from '@/stores/photoAccess';
 import { useAuthStore } from '@/stores/authStore';
 import { matchesKey } from '@/lib/swr';
@@ -48,6 +50,34 @@ export function useDiscover() {
     candidatesRef.current = candidates;
   }, [candidates]);
 
+  // Session-level set of ids the user has swiped (believed recorded server-side).
+  // The BE exclude list is built from committed `swipes` rows at fetch time, so
+  // there's a window — widened by optimistic removal — where a just-swiped card's
+  // POST is still in flight when a prefetch fires: the BE doesn't see the swipe
+  // yet and returns that user again. The queue-only dedup in prefetchMore can't
+  // catch it (the card already left the queue). This set makes the FE
+  // authoritative: anything swiped this session is filtered out of every fetch
+  // regardless of BE commit timing. Entries are removed on rollback (the swipe
+  // wasn't recorded) so a restored card can reappear.
+  const swipedIdsRef = useRef<Set<string>>(new Set());
+
+  // Warm the image cache for the next couple of cards so they paint instantly
+  // when surfaced. The queue prefetch above only pulls candidate *data* (URLs);
+  // RN's <Image> has no lookahead, so without this the next card's photo only
+  // starts downloading once it mounts — showing the placeholder background for
+  // a beat. Dedupe by URL; drop on failure so a later pass can retry.
+  const prefetchedPhotosRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const c of candidates.slice(0, 3)) {
+      const url = c.photos?.[0];
+      if (!url || prefetchedPhotosRef.current.has(url)) continue;
+      prefetchedPhotosRef.current.add(url);
+      Image.prefetch(url).catch(() => {
+        prefetchedPhotosRef.current.delete(url);
+      });
+    }
+  }, [candidates]);
+
   // Pull today's swipe count from BE on mount. Server-derived (counts rows in
   // `swipes` for the user's local "today") so the cap is enforced across
   // devices, not just the local SecureStore. Network failures fall back to 0
@@ -86,7 +116,9 @@ export function useDiscover() {
       }
       const data = await discoverService.getDiscoverCandidates(fetchSize);
       ingestCandidates(data);
-      setCandidates(data);
+      // Filter out anything swiped this session — guards against the BE
+      // returning a just-swiped user whose POST hasn't committed yet.
+      setCandidates(data.filter((c) => !swipedIdsRef.current.has(c.id)));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -96,8 +128,9 @@ export function useDiscover() {
   }, []);
 
   // Background prefetch: append new candidates to the queue without flipping
-  // the visible loading flag. Dedupes by id to absorb the BE returning
-  // already-shown profiles (top-N sort is deterministic until swipes accrue).
+  // the visible loading flag. Dedupes against both the current queue and the
+  // session swiped-set — the latter absorbs the BE returning a just-swiped user
+  // whose POST hasn't committed (deterministic top-N sort keeps surfacing them).
   const prefetchMore = useCallback(async () => {
     if (prefetchingRef.current) return;
     prefetchingRef.current = true;
@@ -109,7 +142,9 @@ export function useDiscover() {
       ingestCandidates(data);
       setCandidates((prev) => {
         const seen = new Set(prev.map((c) => c.id));
-        const fresh = data.filter((c) => !seen.has(c.id));
+        const fresh = data.filter(
+          (c) => !seen.has(c.id) && !swipedIdsRef.current.has(c.id),
+        );
         return [...prev, ...fresh];
       });
     } catch {
@@ -134,10 +169,23 @@ export function useDiscover() {
     swipedId: string,
     direction: 'like' | 'pass',
   ): Promise<SwipeResponse | null> => {
+    // Optimistic: drop the swiped card and bump the count immediately so the
+    // next card surfaces the instant the current one flies off — without
+    // blocking on the swipe POST round-trip (the dominant inter-card lag).
+    // Capture the removed candidate + its position so we can roll back if the
+    // POST fails, rather than silently losing the profile.
+    const prevList = candidatesRef.current;
+    const removedIndex = prevList.findIndex((c) => c.id === swipedId);
+    const removed = removedIndex >= 0 ? prevList[removedIndex] : null;
+
+    setCandidates((prev) => prev.filter((c) => c.id !== swipedId));
+    setDailyCount((c) => Math.min(MAX_PER_DAY, c + 1));
+    // Register in the session swiped-set so an in-flight (not-yet-committed)
+    // POST can't let this user re-surface via a concurrent prefetch.
+    swipedIdsRef.current.add(swipedId);
+
     try {
       const res = await discoverService.swipe({ swiped_id: swipedId, direction });
-      setCandidates((prev) => prev.filter((c) => c.id !== swipedId));
-      setDailyCount((c) => Math.min(MAX_PER_DAY, c + 1));
       // A new mutual match means the matches list has a new row — drop the
       // SWR cache so the Matches tab shows it immediately on next view.
       if (res.match && userId) {
@@ -145,6 +193,40 @@ export function useDiscover() {
       }
       return res;
     } catch (e: any) {
+      const status = e instanceof ApiRequestError ? e.status : 0;
+
+      // 409 = 이미 스와이프한 상대 (멀티기기/중복 요청). 스와이프 행이 사실상 존재
+      // 하므로 카드를 되살리지 않는다(재노출 방지). 다만 낙관적 +1 은 새 행이
+      // 추가된 게 아니라 기존 행이므로 되돌린다 (다음 마운트에 BE 와 재동기화).
+      if (status === 409) {
+        setDailyCount((c) => Math.max(0, c - 1));
+        return null;
+      }
+
+      // 그 외(429 한도 초과 / 네트워크 / 500): 스와이프가 기록되지 않았으므로
+      // 카드를 원래 위치에 복원해 프로필 유실을 막는다.
+      if (removed) {
+        setCandidates((prev) => {
+          if (prev.some((c) => c.id === removed.id)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(removedIndex, next.length), 0, removed);
+          return next;
+        });
+      }
+      // 스와이프 미기록 → 세션 집합에서도 제거. 그렇지 않으면 복원된 카드가
+      // loadCandidates/prefetchMore 의 swipedIdsRef 필터에 걸려 다시 사라진다.
+      // (409 는 위에서 early-return 했으므로 여기 도달하지 않음 — 집합에 유지)
+      swipedIdsRef.current.delete(swipedId);
+
+      if (status === 429) {
+        // BE 하드 캡 도달 — 세션 카운트를 한도로 끌어올려 한도 화면을 노출하고
+        // 추가 프리페치를 멈춘다 (FE 소프트 캡과 BE 가 어긋난 멀티기기 케이스의
+        // 안전망). 복원된 카드는 큐가 비면 한도 화면으로 자연 전환.
+        setDailyCount(MAX_PER_DAY);
+      } else {
+        // 네트워크/500 등 일시 오류 — 낙관적 +1 되돌리기.
+        setDailyCount((c) => Math.max(0, c - 1));
+      }
       setError(e.message);
       return null;
     }

@@ -11,7 +11,8 @@ import type { DiscoverCandidate, SwipeResponse } from '@/types';
 // 받은 좋아요 화면의 카드/스와이프 상태.
 // 디스커버와의 차이점:
 //   1. 카드 풀 = "나를 like 한 사람들" — 별도 엔드포인트 (/api/discover/likes-received)
-//   2. 조회는 BATCH 없이 한 번에 전체 fetch (받은 좋아요 풀은 보통 작음, 페이지네이션 불필요)
+//   2. 조회는 BATCH 없이 한 번에 fetch (BE 가 최신 LIKES_RECEIVED_MAX=300 개로 상한,
+//      받은 좋아요 풀은 보통 그보다 작아 FE 페이지네이션 불필요)
 //   3. 스와이프는 동일 엔드포인트 (POST /api/discover/swipe) 공유 → 일일 50장 한도 합산
 //   4. 'like' 응답 시 즉시 match — 상대가 이미 like 한 상태이므로 reciprocal 항상 성립
 function ingestCandidates(candidates: DiscoverCandidate[]) {

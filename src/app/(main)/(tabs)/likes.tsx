@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
     marginTop: 10,
     textAlign: 'center',

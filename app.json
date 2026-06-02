@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "cover",
-      "backgroundColor": "#FDEAF0"
+      "backgroundColor": "#F5849C"
     },
     "androidStatusBar": {
       "translucent": true,

@@ -127,8 +127,6 @@ export default {
       "Hang tight — once your voice is ready you'll be able to start discovering.",
     passReset: {
       button: 'See skipped people again',
-      empty: 'Want to take another look at people you skipped?',
-      done: 'You can see {{count}} people again',
       empty_zero: "You haven't skipped anyone yet",
     },
   },

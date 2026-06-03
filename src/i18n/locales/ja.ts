@@ -126,8 +126,6 @@ export default {
         voiceProcessingHint: "少々お待ちください。生成が完了すると自動的に探索を始められます。",
         passReset: {
             button: "スキップした人をもう一度見る",
-            empty: "スキップした人をもう一度見てみますか?",
-            done: "{{count}}人をもう一度見られます",
             empty_zero: "まだスキップした人がいません",
         },
     },

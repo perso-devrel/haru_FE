@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Platform, Text, TextInput } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -218,21 +218,26 @@ function RootLayout() {
 
   const appReady = fontsLoaded && !isLoading;
 
-  // 준비되면 네이티브 스플래시(핑크 + 카세트)를 내린다. 그 전까지는 네이티브
-  // 스플래시가 화면을 덮고 있으므로 별도 로딩 화면이 필요 없다.
-  useEffect(() => {
-    if (appReady) SplashScreen.hideAsync().catch(() => {});
-  }, [appReady]);
-
   if (!appReady) return null;
 
+  // 네이티브 스플래시는 루트 뷰가 레이아웃된 직후에 내린다(단순 effect 보다
+  // 늦게) — 첫 화면이 그려지기 전에 splash 가 사라져 안드로이드 기본 회색
+  // 윈도우 배경이 잠깐 비치던 문제를 막는다. 루트 배경색도 splash 와 동일한
+  // #FEEEF0 으로 둬서, 혹시 남는 빈 프레임도 회색이 아니라 핑크로 채운다.
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={styles.root}
+      onLayout={() => SplashScreen.hideAsync().catch(() => {})}
+    >
       <KeyboardProvider>
         <RootShell />
       </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#FEEEF0' },
+});
 
 export default Sentry.wrap(RootLayout);

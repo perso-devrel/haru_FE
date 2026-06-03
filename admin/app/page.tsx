@@ -18,6 +18,7 @@ import {
   type Message,
   type MatchSummary,
   type MyProfile,
+  type PhotoStatus,
   type ProfileUpsertPayload,
   type UserPreferences,
   getDiscover,
@@ -1348,6 +1349,7 @@ function ProfilePane({ account }: { account: DevAccount }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+      <PhotosSection profile={profile} />
       <ProfileSection
         account={account}
         profile={profile}
@@ -1394,6 +1396,90 @@ const fieldInputStyle: React.CSSProperties = {
   borderColor: C.borderSoft,
   color: C.text,
 };
+
+// ===== Photos 섹션 (등록 사진 전체 표시) =====
+//
+// BE GET /api/profile/me 는 photos (status='ready' 변환본 converted_url 만, position ASC)
+// + photo_statuses (모든 사진의 status/position, URL 없음) 를 반환한다 (mig 028).
+// 따라서 실제 이미지로 볼 수 있는 건 변환 완료된 사진뿐이고, 변환 중/실패/거부 사진은
+// 상태 칩으로만 노출한다 (admin 은 읽기 전용 — 사진 업로드/삭제/재배치는 본 화면 범위 밖).
+
+const PHOTO_STATUS_LABEL_KO: Record<string, string> = {
+  pending: '대기 중',
+  processing: '변환 중',
+  ready: '완료',
+  failed: '실패',
+  rejected: '거부됨',
+};
+
+function PhotosSection({ profile }: { profile: MyProfile }) {
+  const photos = profile.photos ?? [];
+  const statuses = profile.photo_statuses ?? [];
+  // 변환 완료(ready) 가 아닌 사진들 — URL 이 없어 이미지로는 못 보여주고 상태만 표시.
+  const pending = statuses.filter((s) => s.status !== 'ready');
+
+  return (
+    <SectionCard title={`photos (${photos.length})`}>
+      {photos.length === 0 && pending.length === 0 && (
+        <div className="text-xs" style={{ color: C.textSecondary }}>
+          등록된 사진 없음
+        </div>
+      )}
+
+      {photos.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {photos.map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="relative block"
+              title="새 탭에서 원본 보기"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={`photo ${i}`}
+                className="h-40 w-32 rounded-xl border object-cover transition"
+                style={{ borderColor: C.border, boxShadow: '0 2px 8px rgba(17,24,39,0.06)' }}
+              />
+              <span
+                className="absolute left-1.5 top-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                style={{ background: i === 0 ? C.primary : 'rgba(17,24,39,0.65)' }}
+              >
+                {i === 0 ? '메인' : `#${i + 1}`}
+              </span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* 변환 미완료 사진 — 이미지 URL 미노출, 상태 칩만 */}
+      {pending.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-[11px]" style={{ color: C.textSecondary }}>
+            변환 미완료 {pending.length}장:
+          </span>
+          {pending.map((s) => (
+            <span
+              key={s.id}
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                background: s.status === 'failed' || s.status === 'rejected' ? '#FEE2E2' : C.surface,
+                color: s.status === 'failed' || s.status === 'rejected' ? C.error : C.textSecondary,
+              }}
+              title={s.failure_reason ?? undefined}
+            >
+              #{s.position + 1} · {PHOTO_STATUS_LABEL_KO[s.status] ?? s.status}
+            </span>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
 
 function ProfileSection({
   account,

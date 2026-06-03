@@ -150,6 +150,16 @@ export type DiscoverCard = {
   photos: string[];
 };
 
+// photo-watercolor-pipeline sprint (mig 028): 사진별 변환 상태. BE GET /api/profile/me
+// 응답의 photo_statuses 배열 항목 shape (haru_BE/src/routes/profile.ts PhotoStatusDto).
+// converted_url 은 미포함 — 실제 이미지 URL 은 profile.photos (status='ready' 만) 에서만 노출.
+export type PhotoStatus = {
+  id: string;
+  position: number;
+  status: 'pending' | 'processing' | 'ready' | 'failed' | 'rejected' | string;
+  failure_reason: string | null;
+};
+
 // BE GET /api/profile/me 응답 (haru_BE/src/routes/profile.ts). DB profiles row 그대로
 // 노출. admin 은 표시/수정에 필요한 필드만 의존하므로 partial type 으로 정의.
 export type MyProfile = {
@@ -162,7 +172,10 @@ export type MyProfile = {
   voice_intro: string | null;
   voice_intro_phrase_id?: string | null;
   interests: string[];
+  // status='ready' 변환본 converted_url 만 position ASC 순. 변환 미완료 사진은 미포함.
   photos: string[];
+  // 모든 사진의 변환 상태 (ready 포함). 사진 URL 은 없고 status/position 만.
+  photo_statuses?: PhotoStatus[];
   voice_clone_status: 'pending' | 'processing' | 'ready' | 'failed' | null;
   elevenlabs_voice_id: string | null;
   // mig 011: ko/ja/en 슬롯별 작성자 텍스트의 번역본 / TTS URL / 합성 상태. admin 은

@@ -70,6 +70,7 @@ export default {
         signupFailed: "新規登録に失敗しました",
         enterEmailAndPassword: "メールアドレスとパスワードを入力してください",
         googleNotInExpoGo: "Googleログインは dev-client または製品ビルドでのみ利用できます。メールログインをご利用ください。",
+        appleNoToken: "Apple認証トークンを取得できませんでした。もう一度お試しください。",
         legalDisclaimer: "登録すると、{{terms}}および{{privacy}}に同意したものとみなされます",
         termsOfService: "利用規約",
         privacyPolicy: "プライバシーポリシー",

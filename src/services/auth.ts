@@ -5,6 +5,10 @@ export async function loginWithGoogle(idToken: string): Promise<AuthResponse> {
   return api.post<AuthResponse>('/api/auth/google', { id_token: idToken });
 }
 
+export async function loginWithApple(idToken: string): Promise<AuthResponse> {
+  return api.post<AuthResponse>('/api/auth/apple', { id_token: idToken });
+}
+
 export async function loginWithEmail(email: string, password: string): Promise<AuthResponse> {
   return api.post<AuthResponse>('/api/auth/login', { email, password });
 }

@@ -70,6 +70,7 @@ export default {
     signupFailed: 'Signup Failed',
     enterEmailAndPassword: 'Please enter email and password',
     googleNotInExpoGo: 'Google sign-in only works in a dev-client or production build. Please use email login instead.',
+    appleNoToken: 'Could not get an identity token from Apple. Please try again.',
     legalDisclaimer: 'By signing up, you agree to the {{terms}} and {{privacy}}',
     termsOfService: 'Terms of Service',
     privacyPolicy: 'Privacy Policy',

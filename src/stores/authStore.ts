@@ -9,6 +9,7 @@ import {
 } from '@/services/api';
 import {
   loginWithGoogle,
+  loginWithApple,
   loginWithEmail as loginEmailApi,
   signupWithEmail as signupEmailApi,
   deleteAccount as deleteAccountApi,
@@ -26,6 +27,7 @@ interface AuthState {
   hasProfile: boolean;
 
   login: (idToken: string) => Promise<void>;
+  appleLogin: (idToken: string) => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
   emailSignup: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   logout: () => Promise<void>;
@@ -45,6 +47,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (idToken: string) => {
     const res = await loginWithGoogle(idToken);
+    await saveTokens(res.access_token, res.refresh_token);
+    set({
+      userId: res.user.id,
+      email: res.user.email,
+    });
+    await get().loadProfile();
+    set({ isAuthenticated: true });
+  },
+
+  // Sign in with Apple — Google 의 login 액션과 동일한 토큰/프로필 흐름.
+  // 분기는 BE 엔드포인트(/apple)뿐이며 이후 세션·프로필·자동로그인은 공통.
+  appleLogin: async (idToken: string) => {
+    const res = await loginWithApple(idToken);
     await saveTokens(res.access_token, res.refresh_token);
     set({
       userId: res.user.id,

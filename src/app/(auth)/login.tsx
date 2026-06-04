@@ -5,6 +5,7 @@ import {
   Pressable,
   Image,
   Linking,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Redirect } from 'expo-router';
@@ -17,6 +18,7 @@ import { useKeyboardState } from 'react-native-keyboard-controller';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
 import { GoogleLoginButton } from '@/components/ui/GoogleLoginButton';
+import { AppleLoginButton } from '@/components/ui/AppleLoginButton';
 import { useAuthStore } from '@/stores/authStore';
 import { showAlert } from '@/stores/alertStore';
 import { ApiRequestError } from '@/services/api';
@@ -39,8 +41,8 @@ const NO_ERRORS: FieldErrors = { email: null, password: null };
 export default function LoginScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { login, emailLogin, emailSignup, isAuthenticated, hasProfile } = useAuthStore();
-  const [loadingAction, setLoadingAction] = useState<'email' | 'google' | null>(null);
+  const { login, appleLogin, emailLogin, emailSignup, isAuthenticated, hasProfile } = useAuthStore();
+  const [loadingAction, setLoadingAction] = useState<'email' | 'google' | 'apple' | null>(null);
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -98,7 +100,10 @@ export default function LoginScreen() {
         webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
         iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       });
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      // hasPlayServices 는 Android 전용 검사 — iOS 에선 호출 자체를 건너뛴다.
+      if (Platform.OS === 'android') {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      }
       const result = await GoogleSignin.signIn();
       const idToken = (result as any)?.data?.idToken ?? (result as any)?.idToken;
       if (!idToken) throw new Error('ID 토큰을 받지 못했습니다');
@@ -108,6 +113,37 @@ export default function LoginScreen() {
       if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
       // message-moderation-v1 follow-up: BE 가 403 account_frozen 반환하면
       // api.ts 의 글로벌 핸들러가 이미 모달 + logout 처리 — 중복 alert 회피.
+      if (e instanceof ApiRequestError && e.code === 'account_frozen') return;
+      showAlert({
+        variant: 'error',
+        title: t('auth.loginFailed'),
+        message: e?.message ?? String(e),
+      });
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // Sign in with Apple — handleGooglePress 와 동일 구조. expo-apple-authentication
+  // 으로 identityToken 을 받아 BE(/apple)로 전달한다. 사용자가 시트를 닫으면
+  // ERR_REQUEST_CANCELED 로 조용히 종료(에러 토스트 미노출).
+  const handleApplePress = async () => {
+    if (loadingAction) return;
+    setLoadingAction('apple');
+    try {
+      const AppleAuthentication = await import('expo-apple-authentication');
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const idToken = credential.identityToken;
+      if (!idToken) throw new Error(t('auth.appleNoToken'));
+      await appleLogin(idToken);
+    } catch (e: any) {
+      if (e?.code === 'ERR_REQUEST_CANCELED') return;
+      // api.ts 글로벌 핸들러가 이미 모달 + logout 처리 — 중복 alert 회피.
       if (e instanceof ApiRequestError && e.code === 'account_frozen') return;
       showAlert({
         variant: 'error',
@@ -310,6 +346,11 @@ export default function LoginScreen() {
             <Text style={styles.dividerText}>{t('auth.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
+
+          {/* iOS: Apple 버튼을 Google 위에 동등 크기로 노출 (HIG 권장 + Guideline
+              4.8 동등 prominence). Android·미지원 기기에선 AppleLoginButton 이
+              null 을 반환해 Google 버튼만 남는다. */}
+          <AppleLoginButton onPress={handleApplePress} />
 
           <GoogleLoginButton
             onPress={handleGooglePress}

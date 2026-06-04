@@ -70,6 +70,7 @@ export default {
         signupFailed: "회원가입 실패",
         enterEmailAndPassword: "이메일과 비밀번호를 입력해주세요",
         googleNotInExpoGo: "Google 로그인은 dev-client 또는 정식 빌드에서만 동작해요. 이메일 로그인을 사용해주세요.",
+        appleNoToken: "Apple 인증 토큰을 받지 못했어요. 다시 시도해주세요.",
         legalDisclaimer: "회원가입 시 {{terms}}과 {{privacy}}에 동의한 것으로 간주됩니다",
         termsOfService: "이용약관",
         privacyPolicy: "개인정보처리방침",

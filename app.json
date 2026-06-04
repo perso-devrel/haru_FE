@@ -28,9 +28,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.haruvoice.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Voice sample recording for voice clone",
-        "NSPhotoLibraryUsageDescription": "Profile photo selection",
+        "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
         ]
@@ -54,24 +54,25 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-apple-authentication",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow haru to access your photos for profile pictures."
+          "photosPermission": "haru needs access to your photos so you can choose pictures for your dating profile."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow haru to save profile photos to your gallery.",
-          "savePhotosPermission": "Allow haru to save profile photos to your gallery.",
+          "photosPermission": "haru needs access to your photo library to manage your profile photos.",
+          "savePhotosPermission": "haru saves a photo to your library only when you choose to download it.",
           "isAccessMediaLocationEnabled": false
         }
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow haru to access your microphone to record voice samples."
+          "microphonePermission": "haru uses your microphone to record your voice profile and to send voice messages in chat."
         }
       ],
       "expo-asset",

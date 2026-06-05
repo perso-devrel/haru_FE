@@ -328,8 +328,8 @@ export default {
   setupProfile: {
     createProfile: 'Create Profile',
     editProfile: 'Edit Profile',
-    displayName: 'Display Name',
-    displayNamePlaceholder: 'Your name',
+    displayName: 'Nickname',
+    displayNamePlaceholder: 'Your nickname',
     birthDate: 'Birth Date',
     birthDatePlaceholder: 'YYYY-MM-DD',
     gender: 'Gender',

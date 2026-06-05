@@ -26,6 +26,7 @@ import * as profileService from "@/services/profile";
 import { ApiRequestError } from "@/services/api";
 import { useSignupDraftStore } from "@/stores/signupDraftStore";
 import { usePhotoPreviewStore } from "@/stores/photoPreviewStore";
+import { usePendingPhotoUploadsStore } from "@/stores/pendingPhotoUploadsStore";
 import { showAlert } from "@/stores/alertStore";
 import { colors, radii, shadows } from "@/constants/colors";
 import { fonts } from "@/constants/fonts";
@@ -57,6 +58,7 @@ export default function SetupStep5() {
     const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * 4) / 3);
     const draft = useSignupDraftStore();
     const setPhotoPreview = usePhotoPreviewStore((s) => s.setPreview);
+    const addPendingPhotoUploads = usePendingPhotoUploadsStore((s) => s.add);
     const {
         profile,
         upsertProfile,
@@ -215,34 +217,49 @@ export default function SetupStep5() {
         router.push("/(main)/setup/step4");
 
         // 사진 업로드는 순차 유지 — BE POST /photos 가 position 을 비원자적으로
-        // 배정해 병렬이면 UNIQUE(user_id, position) 충돌(23505)이 난다. 실패
-        // (휴면 상태인 422 photo_blocked 포함)는 사용자가 이미 다음 단계로 넘어갔을
-        // 수 있으므로 글로벌 alert 로 노출한다.
+        // 배정해 병렬이면 UNIQUE(user_id, position) 충돌(23505)이 난다.
+        //
+        // 부분 실패 격리 + 재시도: 한 장이 실패해도 루프를 끊지 않고 나머지를 계속
+        // 올린다(`uploadPhotoWithRetry` 가 일시적 네트워크/서버 실패는 지수 백오프로
+        // 자동 재시도). 최종 실패는 두 갈래로 처리한다.
+        //   · 모더레이션 거부(422 photo_blocked): 같은 사진 재시도 무의미 → 즉시
+        //     alert(다른 사진으로 교체 안내). 회복 큐에 넣지 않는다.
+        //   · 네트워크/서버 일시 실패(재시도 소진): 가입 흐름을 alert 로 막지 않고
+        //     `pendingPhotoUploadsStore` 에 보존 → 사용자가 가입을 마치고 프로필
+        //     탭에 진입했을 때 배너로 인지/재시도한다(보조 회복).
         void (async () => {
+            const failedUris: string[] = [];
+            let blockedCount = 0;
             try {
                 for (const uri of uris) {
-                    const res = await profileService.uploadPhoto(uri);
-                    // 업로드한 사진의 로컬 URI 를 공유 store 에 기록 — 가입 직후
-                    // 프로필 탭에서 변환 중 슬롯에 흐린 원본을 깔 수 있게 한다.
-                    setPhotoPreview(res.photo_id, uri);
+                    try {
+                        const res =
+                            await profileService.uploadPhotoWithRetry(uri);
+                        // 업로드한 사진의 로컬 URI 를 공유 store 에 기록 — 가입 직후
+                        // 프로필 탭에서 변환 중 슬롯에 흐린 원본을 깔 수 있게 한다.
+                        setPhotoPreview(res.photo_id, uri);
+                    } catch (e: any) {
+                        if (
+                            e instanceof ApiRequestError &&
+                            e.status === 422 &&
+                            e.code === profileService.PHOTO_BLOCKED_CODE
+                        ) {
+                            blockedCount += 1;
+                        } else {
+                            failedUris.push(uri);
+                        }
+                    }
                 }
                 requestAndRegisterPushToken().catch(() => undefined);
-            } catch (e: any) {
-                if (
-                    e instanceof ApiRequestError &&
-                    e.status === 422 &&
-                    e.code === profileService.PHOTO_BLOCKED_CODE
-                ) {
+
+                if (failedUris.length > 0) {
+                    addPendingPhotoUploads(failedUris);
+                }
+                if (blockedCount > 0) {
                     showAlert({
                         variant: "error",
                         title: t("moderation.blocked.title"),
                         message: t("profile.photoBlocked"),
-                    });
-                } else {
-                    showAlert({
-                        variant: "error",
-                        title: t("common.error"),
-                        message: e.message ?? t("signupWizard.registerFailed"),
                     });
                 }
             } finally {

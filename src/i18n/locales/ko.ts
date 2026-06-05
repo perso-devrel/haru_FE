@@ -249,6 +249,10 @@ export default {
         photoConversionFailed: "변환 실패. 다시 시도해주세요.",
         photoBlocked: "이 사진은 사용할 수 없어요. 다른 사진을 선택해주세요.",
         photoRetry: "다시 시도",
+        // 가입 중 일시적 네트워크 실패로 못 올라간 사진의 프로필 탭 회복 배너.
+        pendingUploadsTitle: "사진 {{n}}장을 업로드하지 못했어요",
+        pendingUploadsRetry: "다시 시도",
+        pendingUploadsRetryFailed: "일부 사진을 다시 업로드하지 못했어요. 잠시 후 다시 시도해 주세요.",
         mainPhotoNotReady: "변환 중인 사진은 대표 사진으로 설정할 수 없어요",
         downloadPhoto: "사진 저장",
         downloadSuccess: "사진을 갤러리에 저장했어요.",

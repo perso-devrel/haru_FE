@@ -249,6 +249,13 @@ export default {
     photoConversionFailed: 'Conversion failed. Please try again.',
     photoBlocked: "This photo can't be used. Please choose another.",
     photoRetry: 'Retry',
+    // Profile-tab recovery banner for photos that failed to upload during signup
+    // due to a transient network error. Uses {{n}} (not i18next's plural `count`)
+    // so the key set stays identical across locales — phrased to read correctly
+    // for any number.
+    pendingUploadsTitle: "Couldn't upload {{n}} of your photos",
+    pendingUploadsRetry: 'Retry',
+    pendingUploadsRetryFailed: 'Some photos still failed to upload. Please try again in a moment.',
     mainPhotoNotReady: "Photos still being processed can't be set as your main photo",
     downloadPhoto: 'Save photo',
     downloadSuccess: 'Photo saved to your gallery.',

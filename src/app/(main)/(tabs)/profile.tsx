@@ -25,12 +25,14 @@ import { ErrorText } from '@/components/ui/ErrorText';
 import { VoiceIntroMultiLangPreview } from '@/components/profile/VoiceIntroMultiLangPreview';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
 import { useProfile, MAX_PHOTOS } from '@/hooks/useProfile';
+import * as profileService from '@/services/profile';
 import { downloadWatermarkedPhoto } from '@/services/profile';
 import { ApiRequestError } from '@/services/api';
 import { VOICE_INTRO_SLOT_LANGUAGES, type PhotoStatus, type PhotoConversionStatus } from '@/types';
 import { useInterestResolver } from '@/hooks/useInterestLabel';
 import { showAlert } from '@/stores/alertStore';
 import { usePhotoPreviewStore } from '@/stores/photoPreviewStore';
+import { usePendingPhotoUploadsStore } from '@/stores/pendingPhotoUploadsStore';
 import { colors, gradients, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { calculateAge } from '@/utils/age';
@@ -93,6 +95,12 @@ export default function ProfileScreen() {
   // state 방식은 step5 의 로컬 URI 가 전달 안 돼 가입 직후 blur 가 안 떴다).
   const photoPreviews = usePhotoPreviewStore((s) => s.previews);
   const setPhotoPreview = usePhotoPreviewStore((s) => s.setPreview);
+
+  // 회원가입 step5 백그라운드 업로드에서 재시도까지 소진하고 최종 실패한 사진의
+  // 로컬 URI 들. 비어있지 않으면 그리드 아래 회복 배너로 "다시 시도" 동선을 연다.
+  const pendingPhotoUris = usePendingPhotoUploadsStore((s) => s.uris);
+  const removePendingPhotoUpload = usePendingPhotoUploadsStore((s) => s.remove);
+  const [retryingPending, setRetryingPending] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -188,6 +196,70 @@ export default function ProfileScreen() {
       // different failure mode (server-side, retryable) from the local pick
       // rejections above.
       showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: e.message });
+    }
+  };
+
+  // 회복 재시도: pending 큐의 로컬 URI 들을 다시 업로드한다. 한 장씩 처리해
+  // 성공분만 큐에서 제거하고, 여전히 실패하면 큐에 남겨 다음 시도를 가능케 한다.
+  const handleRetryPendingUploads = async () => {
+    if (retryingPending || pendingPhotoUris.length === 0) return;
+    setRetryingPending(true);
+    // 이미 차지한 슬롯 수(ready + 변환 중). 가입 후 사용자가 그 사이 직접 사진을
+    // 더 추가했을 수 있으므로 MAX_PHOTOS 를 넘기지 않게 가드한다.
+    let occupied = profile?.photo_statuses?.length ?? profile?.photos.length ?? 0;
+    let stillFailed = false;
+    let blocked = false;
+    try {
+      // 스냅샷으로 순회 — 루프 중 remove 가 store 의 배열을 바꿔도 안전.
+      for (const uri of [...pendingPhotoUris]) {
+        // 캐시 원본이 사라졌으면(세션 종료 등) 재업로드 불가 — 큐에서 제거.
+        const info = await FileSystem.getInfoAsync(uri).catch(() => null);
+        if (!info?.exists) {
+          removePendingPhotoUpload(uri);
+          continue;
+        }
+        if (occupied >= MAX_PHOTOS) {
+          // 슬롯이 꽉 찼으면 남은 항목은 올릴 수 없으므로 큐에서 비운다.
+          removePendingPhotoUpload(uri);
+          continue;
+        }
+        try {
+          const res = await profileService.uploadPhotoWithRetry(uri);
+          setPhotoPreview(res.photo_id, uri);
+          removePendingPhotoUpload(uri);
+          occupied += 1;
+        } catch (e: any) {
+          if (
+            e instanceof ApiRequestError &&
+            e.status === 422 &&
+            e.code === profileService.PHOTO_BLOCKED_CODE
+          ) {
+            // 모더레이션 거부는 영구 — 큐에서 제거하고 안내.
+            removePendingPhotoUpload(uri);
+            blocked = true;
+          } else {
+            stillFailed = true;
+          }
+        }
+      }
+      await loadProfile().catch(() => undefined);
+      setPhotoBust((n) => n + 1);
+      if (blocked) {
+        showAlert({
+          variant: 'error',
+          title: t('moderation.blocked.title'),
+          message: t('profile.photoBlocked'),
+        });
+      }
+      if (stillFailed) {
+        showAlert({
+          variant: 'error',
+          title: t('profile.uploadFailed'),
+          message: t('profile.pendingUploadsRetryFailed'),
+        });
+      }
+    } finally {
+      setRetryingPending(false);
     }
   };
 
@@ -591,6 +663,28 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      {/* 회복 배너: 가입 중 일시적 네트워크 실패로 못 올라간 사진이 있을 때만 노출.
+          사용자가 가입을 마치고 프로필 탭에 들어왔을 때 인지 + 한 번에 재시도. */}
+      {pendingPhotoUris.length > 0 ? (
+        <Pressable
+          style={({ pressed }) => [styles.pendingBanner, pressed && { opacity: 0.85 }]}
+          onPress={handleRetryPendingUploads}
+          disabled={retryingPending}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.pendingUploadsRetry')}
+        >
+          <Ionicons name="cloud-upload-outline" size={18} color={colors.primaryDark} />
+          <Text style={styles.pendingBannerText} numberOfLines={2}>
+            {t('profile.pendingUploadsTitle', { n: pendingPhotoUris.length })}
+          </Text>
+          {retryingPending ? (
+            <ActivityIndicator size="small" color={colors.primaryDark} />
+          ) : (
+            <Text style={styles.pendingBannerAction}>{t('profile.pendingUploadsRetry')}</Text>
+          )}
+        </Pressable>
+      ) : null}
+
       {photoBusy ? (
         <View style={styles.photoBusyOverlay} pointerEvents="none">
           <ActivityIndicator size="small" color={colors.primary} />
@@ -894,6 +988,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.primaryDark,
     fontFamily: fonts.medium,
+  },
+  // 회복 배너: 업로드 실패 사진 안내 + 탭하면 재시도. 변환 배너보다 시선을 끌도록
+  // 살짝 더 진한 surface + 보더.
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    alignSelf: 'stretch',
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.soft,
+  },
+  pendingBannerText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    letterSpacing: -0.3,
+    color: colors.primaryDark,
+    fontFamily: fonts.medium,
+  },
+  pendingBannerAction: {
+    fontSize: 13,
+    color: colors.primary,
+    fontFamily: fonts.bold,
   },
   // photo-watercolor-pipeline sprint: 변환 status overlay 슬롯 베이스. pending/
   // processing 은 dimmed cardAlt 배경 + ActivityIndicator; failed/rejected 는

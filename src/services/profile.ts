@@ -78,6 +78,44 @@ export async function uploadPhoto(uri: string): Promise<PhotoUploadResponse> {
   return JSON.parse(result.body) as PhotoUploadResponse;
 }
 
+// 일시적(transient) 실패만 재시도한다. 영구 실패(모더레이션 거부·잘못된 요청)는
+// 같은 바이트를 다시 올려도 결과가 같으므로 즉시 throw 한다.
+//   - status 0  : 네트워크/타임아웃 (api.ts fetchWithTimeout / utils/upload 의
+//                 uploadWithTimeout 이 0 으로 정규화) → 재시도
+//   - status>=500: 서버 일시 장애 → 재시도
+//   - status 4xx: 클라이언트 영구 오류 (422 photo_blocked 포함) → 재시도 안 함
+//   - 그 외 일반 Error: FileSystem.uploadAsync 가 거부한 네이티브 네트워크 에러
+//                 ("Connection reset" 등)는 ApiRequestError 가 아닌 Error 로
+//                 올라온다 — 일시적 실패로 간주해 재시도
+function isRetryableUploadError(e: unknown): boolean {
+  if (e instanceof ApiRequestError) {
+    return e.status === 0 || e.status >= 500;
+  }
+  return true;
+}
+
+// 사진 업로드를 일시적 실패에 대해 지수 백오프로 재시도한다. 회원가입 step5 의
+// 백그라운드 배치 업로드 + 프로필 탭 회복 재시도가 공유한다. 모더레이션 거부 등
+// 영구 실패는 첫 시도에서 곧장 throw 되어 호출처가 분기 처리한다.
+export async function uploadPhotoWithRetry(
+  uri: string,
+  maxAttempts = 3,
+): Promise<PhotoUploadResponse> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await uploadPhoto(uri);
+    } catch (e) {
+      lastErr = e;
+      if (attempt >= maxAttempts || !isRetryableUploadError(e)) throw e;
+      // 0.8s → 1.6s 백오프. 짧은 연결 끊김/혼잡을 흡수하기 충분하면서 사용자가
+      // 가입 직후 느낄 만큼 길지 않다.
+      await new Promise((resolve) => setTimeout(resolve, 800 * 2 ** (attempt - 1)));
+    }
+  }
+  throw lastErr;
+}
+
 // compact=false 면 BE 가 삭제 후 position 압축을 건너뛴다(gap 유지). "변경(replace)"
 // 흐름이 delete(compact=false) → upload 로 같은 슬롯에 새 사진을 채우기 위해 사용.
 // 단독 삭제는 기본(압축).

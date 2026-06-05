@@ -248,6 +248,11 @@ export default {
         photoConversionFailed: "変換失敗。もう一度お試しください。",
         photoBlocked: "この写真は使用できません。別の写真を選択してください。",
         photoRetry: "再試行",
+        // 登録中の一時的なネットワーク障害でアップロードできなかった写真のプロフィール
+        // タブ用リカバリーバナー。
+        pendingUploadsTitle: "{{n}}枚の写真をアップロードできませんでした",
+        pendingUploadsRetry: "再試行",
+        pendingUploadsRetryFailed: "一部の写真を再アップロードできませんでした。しばらくしてからもう一度お試しください。",
         mainPhotoNotReady: "変換中の写真はメイン写真に設定できません",
         downloadPhoto: "写真を保存",
         downloadSuccess: "写真をギャラリーに保存しました。",

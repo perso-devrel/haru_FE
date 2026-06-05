@@ -44,7 +44,10 @@ export function useProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await profileService.uploadPhoto(uri);
+      // 프로필 탭 사진 추가/교체도 일시적 네트워크 실패("Connection reset"·타임아웃·
+      // 5xx)는 자동 재시도한다(step5 백그라운드 업로드와 동일 헬퍼). 모더레이션
+      // 거부(422) 등 영구 실패는 즉시 throw 되어 호출처가 alert 분기.
+      const res = await profileService.uploadPhotoWithRetry(uri);
       await loadProfile();
       return res;
     } catch (e: any) {
@@ -113,7 +116,10 @@ export function useProfile() {
       // compact=false: 삭제가 그 자리에 gap 을 남기고, 직후 업로드가 "첫 빈 자리"
       // =원래 슬롯을 채워 변경 사진이 같은 위치에 들어가게 한다(순서 유지).
       await profileService.deletePhoto(position, { compact: false });
-      const res = await profileService.uploadPhoto(newUri);
+      // 일시적 네트워크 실패는 재시도. 단, replace 는 삭제가 먼저라 재시도까지
+      // 모두 실패하면 옛 사진을 잃고 빈 슬롯이 된다(순서 보존 트레이드오프) —
+      // 이 옛-사진-유실은 별도 후속(업로드 성공 후 삭제로 순서 뒤집기)으로 분리.
+      const res = await profileService.uploadPhotoWithRetry(newUri);
       await loadProfile();
       return res;
     } catch (e: any) {

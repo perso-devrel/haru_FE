@@ -27,6 +27,15 @@ export default {
     deletedUser: 'Former member',
   },
 
+  photoEditor: {
+    title: 'Edit photo',
+    rotate: 'Rotate',
+    flipHorizontal: 'Flip',
+    flipVertical: 'Flip vertical',
+    processing: 'Processing...',
+    failed: 'Could not edit the photo. Please try again.',
+  },
+
   signupWizard: {
     progress: '{{current}} / {{total}}',
     step1Title: 'Profile Setup',

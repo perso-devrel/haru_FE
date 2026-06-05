@@ -14,6 +14,7 @@ import { registerOnSessionExpired, registerOnAccountFrozen } from '@/services/ap
 import { requestAndRegisterPushToken } from '@/hooks/usePushToken';
 import { getActiveChatMatchId, isMatchesTabActive } from '@/lib/activeChat';
 import { AlertHost } from '@/components/ui/AlertHost';
+import { PhotoEditorHost } from '@/components/photo/PhotoEditorHost';
 import { showAlert } from '@/stores/alertStore';
 import { SWRConfigProvider } from '@/lib/swr';
 import { PRETENDARD_ASSETS, fonts } from '@/constants/fonts';
@@ -123,6 +124,7 @@ function RootShell() {
           <Stack.Screen name="index" />
         </Stack>
         <AlertHost />
+        <PhotoEditorHost />
       </SWRConfigProvider>
     </SafeAreaProvider>
   );

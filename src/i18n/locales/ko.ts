@@ -27,6 +27,15 @@ export default {
         deletedUser: "탈퇴한 사용자",
     },
 
+    photoEditor: {
+        title: "사진 편집",
+        rotate: "회전",
+        flipHorizontal: "좌우 반전",
+        flipVertical: "상하 반전",
+        processing: "처리 중...",
+        failed: "사진을 편집하지 못했어요. 다시 시도해 주세요.",
+    },
+
     signupWizard: {
         progress: "{{current}} / {{total}}",
         step1Title: "프로필 등록",

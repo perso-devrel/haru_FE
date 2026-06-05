@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import CountryFlag from 'react-native-country-flag';
 import * as ImagePicker from 'expo-image-picker';
+import { openPhotoEditor } from '@/stores/photoEditorStore';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -153,25 +154,22 @@ export default function ProfileScreen() {
     setPhotoError(null);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 0.8,
+      allowsEditing: false,
+      quality: 1,
     });
 
     if (result.canceled || !result.assets[0]) return null;
 
-    const asset = result.assets[0];
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (asset.mimeType && !allowedTypes.includes(asset.mimeType)) {
-      setPhotoError(t('profile.invalidImageFormat'));
-      return null;
-    }
-    const info = await FileSystem.getInfoAsync(asset.uri);
+    // Crop(3:4)/rotate/flip in our cross-platform editor. Output is a JPEG URI
+    // (the native picker's square-on-iOS limitation no longer applies).
+    const edited = await openPhotoEditor(result.assets[0].uri);
+    if (!edited) return null;
+    const info = await FileSystem.getInfoAsync(edited);
     if (info.exists && info.size && info.size > 5 * 1024 * 1024) {
       setPhotoError(t('profile.photoSizeLimit'));
       return null;
     }
-    return asset.uri;
+    return edited;
   };
 
   const handleAddPhoto = async () => {

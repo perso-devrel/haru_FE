@@ -27,6 +27,15 @@ export default {
         deletedUser: "退会したユーザー",
     },
 
+    photoEditor: {
+        title: "写真を編集",
+        rotate: "回転",
+        flipHorizontal: "左右反転",
+        flipVertical: "上下反転",
+        processing: "処理中...",
+        failed: "写真を編集できませんでした。もう一度お試しください。",
+    },
+
     signupWizard: {
         progress: "{{current}} / {{total}}",
         step1Title: "プロフィール登録",

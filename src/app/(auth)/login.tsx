@@ -20,7 +20,7 @@ import { FormField } from '@/components/ui/FormField';
 import { GoogleLoginButton } from '@/components/ui/GoogleLoginButton';
 import { AppleLoginButton } from '@/components/ui/AppleLoginButton';
 import { useAuthStore } from '@/stores/authStore';
-import { showAlert } from '@/stores/alertStore';
+import { showAlert, dismissAlert } from '@/stores/alertStore';
 import { ApiRequestError } from '@/services/api';
 import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
@@ -229,26 +229,51 @@ export default function LoginScreen() {
 
     setErrors(NO_ERRORS);
     setLoadingAction('email');
-    try {
-      if (isSignup) {
-        const result = await emailSignup(email.trim(), password);
-        // Supabase "Confirm email" ON: no session was issued. Surface the
-        // check-your-inbox message and flip the form back to login mode so
-        // the user lands here naturally after clicking the confirm link.
-        if (result.needsEmailConfirmation) {
-          showAlert({
+    // Optimistically show the "check your inbox" modal the instant signup
+    // starts. The round-trip is slow (Supabase signUp sends the confirm email
+    // synchronously + the BE existence probe), and with Confirm-email ON the
+    // success result is always needsEmailConfirmation — so the modal we'd show
+    // on resolve is known up front. We reconcile below: dismiss it on error or
+    // when a session was unexpectedly issued (Confirm-email OFF). Skipped when
+    // the password already failed client-side, since the BE will reject that
+    // and a "check your inbox" modal would be misleading.
+    const optimisticConfirmId =
+      isSignup && !passwordClientErr
+        ? showAlert({
             variant: 'info',
             title: t('auth.signupCheckEmailTitle'),
             message: t('auth.signupCheckEmailMessage', { email: email.trim() }),
-          });
+          })
+        : null;
+    try {
+      if (isSignup) {
+        const result = await emailSignup(email.trim(), password);
+        // Supabase "Confirm email" ON: no session was issued. The check-your-
+        // inbox modal is already up (optimistic); just flip the form back to
+        // login mode so the user lands here after clicking the confirm link.
+        if (result.needsEmailConfirmation) {
+          if (!optimisticConfirmId) {
+            // We skipped the optimistic modal (password failed client-side) yet
+            // the BE accepted anyway — show it now so the success isn't silent.
+            showAlert({
+              variant: 'info',
+              title: t('auth.signupCheckEmailTitle'),
+              message: t('auth.signupCheckEmailMessage', { email: email.trim() }),
+            });
+          }
           setIsSignup(false);
           setPassword('');
           return;
         }
+        // Session issued (Confirm-email OFF): emailSignup already authenticated
+        // the user; drop the optimistic modal and let <Redirect> route in.
+        if (optimisticConfirmId) dismissAlert(optimisticConfirmId);
       } else {
         await emailLogin(email.trim(), password);
       }
     } catch (e) {
+      // Roll back the optimistic modal before surfacing the real error.
+      if (optimisticConfirmId) dismissAlert(optimisticConfirmId);
       // Email-side BE codes win over a local password complaint: the email
       // is the gating field and must be fixed regardless.
       if (e instanceof ApiRequestError) {

@@ -55,7 +55,7 @@ export default {
         step5ConvertingLocked: "사진을 그림으로 변환 중입니다. 프로필 등록을 마쳐주세요.",
         bioRequired: "보이스 한마디를 선택해주세요",
         voiceRequired: "음성 등록을 먼저 완료해주세요",
-        displayNameRequired: "이름을 입력해주세요",
+        displayNameRequired: "닉네임을 입력해주세요",
         birthDateRequired: "생년월일을 YYYY-MM-DD 형식으로 입력해주세요",
         register: "프로필 등록",
         skipAndRegister: "건너뛰고 등록",

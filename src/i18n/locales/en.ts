@@ -55,7 +55,7 @@ export default {
     step5ConvertingLocked: 'Your photos are being converted to illustrations. Please finish setting up your profile.',
     bioRequired: 'Please pick a voice line',
     voiceRequired: 'Please register your voice first',
-    displayNameRequired: 'Please enter your name',
+    displayNameRequired: 'Please enter your nickname',
     birthDateRequired: 'Birth date must be YYYY-MM-DD',
     register: 'Register Profile',
     skipAndRegister: 'Skip & Register',

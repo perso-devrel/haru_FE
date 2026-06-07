@@ -55,7 +55,7 @@ export default {
         step5ConvertingLocked: "写真をイラストに変換中です。プロフィール登録を完了してください。",
         bioRequired: "ボイスひとことを選んでください",
         voiceRequired: "先に声の登録を完了してください",
-        displayNameRequired: "名前を入力してください",
+        displayNameRequired: "ニックネームを入力してください",
         birthDateRequired: "生年月日を YYYY-MM-DD の形式で入力してください",
         register: "プロフィール登録",
         skipAndRegister: "スキップして登録",

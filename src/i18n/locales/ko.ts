@@ -554,7 +554,7 @@ export default {
         privacyPolicy: "개인정보처리방침",
         deleteAccount: "회원 탈퇴",
         deleteAccountTitle: "회원 탈퇴",
-        deleteAccountConfirm: "정말 탈퇴하시겠어요? 프로필·사진·보이스·매칭 선호도는 즉시 삭제되고, 매치와 메시지 기록은 상대방의 채팅 보호를 위해 익명화된 상태로 남아요. 복구는 불가능합니다.",
+        deleteAccountConfirm: "정말 탈퇴하시겠어요? 복구는 불가능합니다.",
         notifications: {
             title: "알림",
             messages: "메시지 알림",

@@ -554,7 +554,7 @@ export default {
         privacyPolicy: "プライバシーポリシー",
         deleteAccount: "退会する",
         deleteAccountTitle: "退会する",
-        deleteAccountConfirm: "本当に退会しますか？プロフィール・写真・ボイス・マッチング設定は即時削除され、マッチとメッセージは相手のチャット保護のため匿名化された状態で残ります。復元はできません。",
+        deleteAccountConfirm: "本当に退会しますか？復元はできません。",
         notifications: {
             title: "通知",
             messages: "メッセージ通知",

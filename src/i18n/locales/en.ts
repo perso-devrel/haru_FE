@@ -556,7 +556,7 @@ export default {
     privacyPolicy: 'Privacy Policy',
     deleteAccount: 'Delete Account',
     deleteAccountTitle: 'Delete Account',
-    deleteAccountConfirm: "Are you sure you want to delete your account? Your profile, photos, voice, and matching preferences will be removed immediately. Matches and messages will remain in anonymized form to protect your partners' chat history. This cannot be undone.",
+    deleteAccountConfirm: "Are you sure you want to delete your account? This cannot be undone.",
     notifications: {
       title: 'Notifications',
       messages: 'Message notifications',

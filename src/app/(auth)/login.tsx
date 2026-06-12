@@ -434,6 +434,11 @@ const styles = StyleSheet.create({
   bgRoot: {
     flex: 1,
     overflow: 'hidden',
+    // 로컬 번들 이미지(login-day.png)는 네트워크 로딩은 없지만 콜드스타트 시
+    // 스플래시 직후 디코드 직전 한 순간 기본 윈도우 배경(흰/회색)이 비친다.
+    // 노을 이미지 상단 톤과 맞는 따뜻한 핑크를 깔아 그 순간이 회색이 아니라
+    // 배경과 자연스럽게 이어지도록 한다.
+    backgroundColor: colors.secondary,
   },
   container: {
     flex: 1,
@@ -510,18 +515,21 @@ const styles = StyleSheet.create({
   dividerText: {
     color: colors.textSecondary,
     fontSize: 13,
+    fontFamily: fonts.regular,
     letterSpacing: 0.3,
   },
   disclaimer: {
     textAlign: 'center',
     color: colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    lineHeight: 15,
     marginTop: 6,
     paddingHorizontal: 8,
   },
   disclaimerLink: {
     color: colors.primary,
+    fontFamily: fonts.regular,
     textDecorationLine: 'underline',
   },
 });

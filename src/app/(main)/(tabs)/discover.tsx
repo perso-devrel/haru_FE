@@ -144,7 +144,11 @@ export default function DiscoverScreen() {
     />
   );
 
-  if (!current) {
+  // 일일 한도 도달 시엔 후보가 남아 있어도(병렬 fetch 가 quota 도착 전 미리
+  // 받아둔 카드) 카드를 노출하지 않고 한도 화면을 보여준다. 서버가 swipe 를
+  // 429 로 캡하므로 그 카드들은 어차피 못 넘긴다 — "안 넘어가는 카드" 대신
+  // 명확한 한도 안내를 띄운다. (병렬화 이전의 한도 UX 를 그대로 보존)
+  if (!current || dailyLimitReached) {
     const titleKey = dailyLimitReached ? 'discover.dailyLimitTitle' : 'discover.noMoreProfiles';
     const textKey = dailyLimitReached ? 'discover.dailyLimitText' : 'discover.checkBackLater';
     const iconName = dailyLimitReached ? 'time-outline' : 'sparkles';

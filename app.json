@@ -96,6 +96,14 @@
           "project": "haru-mobile",
           "url": "https://sentry.io/"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
       ]
     ],
     "extra": {

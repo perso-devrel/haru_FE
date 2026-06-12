@@ -45,6 +45,15 @@ export default function Footer() {
           <span className="text-[color:var(--color-text-light)]">·</span>
           <span>© {year} haru</span>
         </div>
+        <p>
+          {t('contact')}:{' '}
+          <a
+            href="mailto:sejinim02@gmail.com"
+            className="transition hover:text-[color:var(--color-primary-dark)] hover:underline"
+          >
+            sejinim02@gmail.com
+          </a>
+        </p>
       </div>
     </footer>
   );

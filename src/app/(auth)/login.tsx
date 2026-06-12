@@ -109,8 +109,17 @@ export default function LoginScreen() {
       if (!idToken) throw new Error('ID 토큰을 받지 못했습니다');
       await login(idToken);
     } catch (e: any) {
-      const { statusCodes } = await import('@react-native-google-signin/google-signin');
-      if (e?.code === statusCodes.SIGN_IN_CANCELLED) return;
+      // statusCodes 는 native 상수(TurboModule)에서 파생되므로, 네이티브 모듈이
+      // 비정상이면 import 자체가 throw 하거나 statusCodes 가 undefined 일 수 있다.
+      // 그대로 statusCodes.SIGN_IN_CANCELLED 를 읽으면 핸들러가 2차로 터져
+      // 원래 실패 원인(e)을 가린다 → 옵셔널 접근 + import 가드로 방어한다.
+      let statusCodes: any;
+      try {
+        ({ statusCodes } = await import('@react-native-google-signin/google-signin'));
+      } catch {
+        // 네이티브 모듈 미로드 등으로 재import 실패 — 무시하고 아래에서 원본 e 노출
+      }
+      if (statusCodes?.SIGN_IN_CANCELLED != null && e?.code === statusCodes.SIGN_IN_CANCELLED) return;
       // message-moderation-v1 follow-up: BE 가 403 account_frozen 반환하면
       // api.ts 의 글로벌 핸들러가 이미 모달 + logout 처리 — 중복 alert 회피.
       if (e instanceof ApiRequestError && e.code === 'account_frozen') return;

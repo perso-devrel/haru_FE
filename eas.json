@@ -1,60 +1,60 @@
 {
-  "cli": {
-    "version": ">= 18.11.0",
-    "appVersionSource": "remote"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "channel": "development",
-      "environment": "development",
-      "credentialsSource": "local",
-      "ios": {
-        "credentialsSource": "remote"
-      },
-      "env": {
-        "APP_VARIANT": "development"
-      }
+    "cli": {
+        "version": ">= 18.11.0",
+        "appVersionSource": "remote"
     },
-    "preview": {
-      "distribution": "internal",
-      "channel": "preview",
-      "environment": "preview",
-      "android": {
-        "buildType": "apk"
-      },
-      "credentialsSource": "local",
-      "ios": {
-        "credentialsSource": "remote"
-      },
-      "env": {
-        "APP_VARIANT": "development"
-      }
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal",
+            "channel": "development",
+            "environment": "development",
+            "credentialsSource": "local",
+            "ios": {
+                "credentialsSource": "remote"
+            },
+            "env": {
+                "APP_VARIANT": "development"
+            }
+        },
+        "preview": {
+            "distribution": "internal",
+            "channel": "preview",
+            "environment": "preview",
+            "android": {
+                "buildType": "apk"
+            },
+            "credentialsSource": "local",
+            "ios": {
+                "credentialsSource": "remote"
+            },
+            "env": {
+                "APP_VARIANT": "development"
+            }
+        },
+        "production": {
+            "autoIncrement": true,
+            "channel": "production",
+            "environment": "production",
+            "credentialsSource": "remote",
+            "env": {
+                "APP_VARIANT": "production"
+            },
+            "android": {
+                "buildType": "app-bundle"
+            }
+        }
     },
-    "production": {
-      "autoIncrement": true,
-      "channel": "production",
-      "environment": "production",
-      "credentialsSource": "remote",
-      "env": {
-        "APP_VARIANT": "production"
-      },
-      "android": {
-        "buildType": "app-bundle"
-      }
+    "submit": {
+        "production": {
+            "android": {
+                "track": "internal"
+            },
+            "ios": {
+                "appleId": "sejinim02@gmail.com",
+                "ascAppId": "6779128759",
+                "appleTeamId": "8Y3T679M89"
+            }
+        }
     }
-  },
-  "submit": {
-    "production": {
-      "android": {
-        "track": "internal"
-      },
-      "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
-      }
-    }
-  }
 }

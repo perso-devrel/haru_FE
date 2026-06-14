@@ -29,6 +29,14 @@ Members must not engage in any of the following:
 5. Spam or advertising that directs users to external channels (messenger IDs, phone numbers, etc.).
 6. Automated access, crawling, reverse engineering, or other acts that undermine the safety of the Service.
 
+## Zero Tolerance for Objectionable Content and Abusive Users
+
+The Operator enforces a strict zero-tolerance policy toward objectionable content and toward users who behave abusively toward other members. There is no tolerance for objectionable content — including sexual, violent, hateful, harassing, discriminatory, or minor-related content — or for users who threaten, harass, or abuse other members.
+
+1. Members can report objectionable content or abusive users using the **Report** feature in the chat screen, and can block a specific user using the **Block** feature so that they are no longer connected.
+2. The Operator reviews submitted reports and acts on objectionable content within 24 hours by removing the offending content and ejecting (suspending or banning) the user who provided it.
+3. By using the Service, members agree to this zero-tolerance policy.
+
 ## Content Moderation
 
 For the safety of the Service, the Operator reviews content such as messages and voice intros created or sent by members, and may automatically block prohibited content such as sexual, drug-related, minor-related, or self-harm-inciting content. If reports against the same member accumulate to a certain number, the Operator may suspend the account without prior notice, and a suspended member can find the appeal channel through in-app guidance. The retention and handling of records related to blocking, suspension, and reports are governed by the Privacy Policy.

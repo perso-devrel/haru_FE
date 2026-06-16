@@ -8,7 +8,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import { useEffect, useMemo, useState } from 'react';
@@ -20,7 +20,7 @@ import { FormField } from '@/components/ui/FormField';
 import { GoogleLoginButton } from '@/components/ui/GoogleLoginButton';
 import { AppleLoginButton } from '@/components/ui/AppleLoginButton';
 import { useAuthStore } from '@/stores/authStore';
-import { showAlert, dismissAlert } from '@/stores/alertStore';
+import { showAlert } from '@/stores/alertStore';
 import { ApiRequestError } from '@/services/api';
 import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
@@ -179,7 +179,12 @@ export default function LoginScreen() {
           setErrors({ email: null, password: t('validation.passwordWrong') });
           return true;
         case 'EMAIL_NOT_CONFIRMED':
-          setErrors({ email: t('validation.emailNotConfirmed'), password: null });
+          // 인증 미완료 계정 — 코드 입력 화면으로 보내 검증/재발송 동선을 연다
+          // (옛 코드가 만료됐어도 화면의 재발송 버튼으로 새 코드를 받을 수 있다).
+          router.push({
+            pathname: '/(auth)/verify-email',
+            params: { email: email.trim() },
+          });
           return true;
         case 'EMAIL_TAKEN':
           setErrors({ email: t('validation.emailTaken'), password: null });
@@ -239,51 +244,26 @@ export default function LoginScreen() {
 
     setErrors(NO_ERRORS);
     setLoadingAction('email');
-    // Optimistically show the "check your inbox" modal the instant signup
-    // starts. The round-trip is slow (Supabase signUp sends the confirm email
-    // synchronously + the BE existence probe), and with Confirm-email ON the
-    // success result is always needsEmailConfirmation — so the modal we'd show
-    // on resolve is known up front. We reconcile below: dismiss it on error or
-    // when a session was unexpectedly issued (Confirm-email OFF). Skipped when
-    // the password already failed client-side, since the BE will reject that
-    // and a "check your inbox" modal would be misleading.
-    const optimisticConfirmId =
-      isSignup && !passwordClientErr
-        ? showAlert({
-            variant: 'info',
-            title: t('auth.signupCheckEmailTitle'),
-            message: t('auth.signupCheckEmailMessage', { email: email.trim() }),
-          })
-        : null;
     try {
       if (isSignup) {
         const result = await emailSignup(email.trim(), password);
-        // Supabase "Confirm email" ON: no session was issued. The check-your-
-        // inbox modal is already up (optimistic); just flip the form back to
-        // login mode so the user lands here after clicking the confirm link.
+        // Supabase "Confirm email" ON: no session was issued. Route to the
+        // code-entry screen — verifyOtp there issues the session, so the user
+        // is logged in straight after entering the code (no manual re-login).
+        // Confirm-email OFF is not expected in prod; if a session was issued
+        // emailSignup already authenticated and the <Redirect> below routes in.
         if (result.needsEmailConfirmation) {
-          if (!optimisticConfirmId) {
-            // We skipped the optimistic modal (password failed client-side) yet
-            // the BE accepted anyway — show it now so the success isn't silent.
-            showAlert({
-              variant: 'info',
-              title: t('auth.signupCheckEmailTitle'),
-              message: t('auth.signupCheckEmailMessage', { email: email.trim() }),
-            });
-          }
-          setIsSignup(false);
           setPassword('');
+          router.push({
+            pathname: '/(auth)/verify-email',
+            params: { email: email.trim() },
+          });
           return;
         }
-        // Session issued (Confirm-email OFF): emailSignup already authenticated
-        // the user; drop the optimistic modal and let <Redirect> route in.
-        if (optimisticConfirmId) dismissAlert(optimisticConfirmId);
       } else {
         await emailLogin(email.trim(), password);
       }
     } catch (e) {
-      // Roll back the optimistic modal before surfacing the real error.
-      if (optimisticConfirmId) dismissAlert(optimisticConfirmId);
       // Email-side BE codes win over a local password complaint: the email
       // is the gating field and must be fixed regardless.
       if (e instanceof ApiRequestError) {

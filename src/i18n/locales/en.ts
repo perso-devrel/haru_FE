@@ -87,8 +87,20 @@ export default {
     legalDisclaimer: 'By signing up, you agree to the {{terms}} and {{privacy}}',
     termsOfService: 'Terms of Service',
     privacyPolicy: 'Privacy Policy',
-    signupCheckEmailTitle: 'Check your inbox',
-    signupCheckEmailMessage: "We sent a verification email to {{email}}. Tap the link in the email to finish signing up.",
+  },
+
+  verifyEmail: {
+    title: 'Verify your email',
+    subtitle: 'Enter the 6-digit code we sent to {{email}}.',
+    codePlaceholder: 'XXXXXX',
+    verify: 'Verify',
+    expiresIn: 'Expires in {{time}}',
+    expired: 'This code has expired. Please resend.',
+    invalidCode: 'That code is incorrect or expired.',
+    resend: 'Resend code',
+    resendCooldown: 'Resend available in {{sec}}s',
+    resent: 'We sent a new code.',
+    rateLimit: 'Please try again in a moment.',
   },
 
   validation: {

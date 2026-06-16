@@ -87,8 +87,20 @@ export default {
         legalDisclaimer: "登録すると、{{terms}}および{{privacy}}に同意したものとみなされます",
         termsOfService: "利用規約",
         privacyPolicy: "プライバシーポリシー",
-        signupCheckEmailTitle: "メールをご確認ください",
-        signupCheckEmailMessage: "{{email}} 宛に認証メールを送信しました。メール内のリンクをタップすると登録が完了します。",
+    },
+
+    verifyEmail: {
+        title: "メール認証",
+        subtitle: "{{email}} に送信した6桁のコードを入力してください。",
+        codePlaceholder: "XXXXXX",
+        verify: "認証する",
+        expiresIn: "{{time}} 後に期限切れ",
+        expired: "コードの有効期限が切れました。再送信してください。",
+        invalidCode: "コードが正しくないか、有効期限が切れています。",
+        resend: "コードを再送信",
+        resendCooldown: "{{sec}}秒後に再送信できます",
+        resent: "認証コードを再送信しました。",
+        rateLimit: "しばらくしてからもう一度お試しください。",
     },
 
     validation: {

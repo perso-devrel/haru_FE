@@ -87,8 +87,20 @@ export default {
         legalDisclaimer: "회원가입 시 {{terms}}과 {{privacy}}에 동의한 것으로 간주됩니다",
         termsOfService: "이용약관",
         privacyPolicy: "개인정보처리방침",
-        signupCheckEmailTitle: "메일함을 확인해주세요",
-        signupCheckEmailMessage: "{{email}} 로 인증 메일을 보냈어요. 메일의 링크를 누르면 가입이 완료돼요.",
+    },
+
+    verifyEmail: {
+        title: "이메일 인증",
+        subtitle: "{{email}} 로 보낸 6자리 코드를 입력해주세요.",
+        codePlaceholder: "XXXXXX",
+        verify: "인증하기",
+        expiresIn: "{{time}} 후 만료",
+        expired: "코드가 만료됐어요. 재발송해주세요.",
+        invalidCode: "코드가 올바르지 않거나 만료되었어요.",
+        resend: "코드 재발송",
+        resendCooldown: "{{sec}}초 후 재발송 가능",
+        resent: "인증 코드를 다시 보냈어요.",
+        rateLimit: "잠시 후 다시 시도해주세요.",
     },
 
     validation: {

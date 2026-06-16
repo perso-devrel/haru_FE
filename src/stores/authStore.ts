@@ -12,6 +12,7 @@ import {
   loginWithApple,
   loginWithEmail as loginEmailApi,
   signupWithEmail as signupEmailApi,
+  verifyEmailOtp as verifyEmailOtpApi,
   deleteAccount as deleteAccountApi,
 } from '@/services/auth';
 import { getMyProfile } from '@/services/profile';
@@ -31,6 +32,7 @@ interface AuthState {
   appleLogin: (idToken: string) => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
   emailSignup: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   tryAutoLogin: () => Promise<void>;
@@ -97,6 +99,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await get().loadProfile();
     set({ isAuthenticated: true });
     return { needsEmailConfirmation: false };
+  },
+
+  // 이메일 인증 코드 검증 — 성공 시 세션 발급. emailLogin 과 동일한 토큰/프로필/
+  // 자동로그인 흐름 (분기는 BE 엔드포인트뿐). 인증 직후 바로 로그인되어 setup 으로
+  // 진입한다(수동 재로그인 불필요).
+  verifyEmailOtp: async (email: string, token: string) => {
+    const res = await verifyEmailOtpApi(email, token);
+    await saveTokens(res.access_token, res.refresh_token);
+    set({
+      userId: res.user.id,
+      email: res.user.email,
+    });
+    await get().loadProfile();
+    set({ isAuthenticated: true });
   },
 
   logout: async () => {

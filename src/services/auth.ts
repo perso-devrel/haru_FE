@@ -17,6 +17,17 @@ export async function signupWithEmail(email: string, password: string): Promise<
   return api.post<SignupResponse>('/api/auth/signup', { email, password });
 }
 
+// 이메일 인증 코드(OTP) 검증 — 성공 시 BE 가 세션 토큰을 발급(login 과 동일 shape).
+// 만료/불일치는 400 + code='OTP_INVALID'.
+export async function verifyEmailOtp(email: string, token: string): Promise<AuthResponse> {
+  return api.post<AuthResponse>('/api/auth/verify-otp', { email, token });
+}
+
+// 인증 코드 재발송 — Supabase 60초 쿨다운. 한도 초과 시 429 + code='OTP_RATE_LIMIT'.
+export async function resendEmailOtp(email: string): Promise<void> {
+  await api.post<void>('/api/auth/resend-otp', { email });
+}
+
 // BE returns 204 on success. Errors map to inline UX:
 //   WRONG_CURRENT_PASSWORD → field error on the current-password input
 //   PASSWORD_FORMAT        → field error on the new-password input

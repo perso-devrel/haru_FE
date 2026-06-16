@@ -46,6 +46,7 @@ import { DEFAULT_EMOTION } from '@/constants/emotions';
 import * as matchService from '@/services/matches';
 import { CHAT_PROMPTS_SEEN_KEY_PREFIX } from '@/constants/chatPrompts';
 import { calculateAge } from '@/utils/age';
+import { userFacingError } from '@/utils/errors';
 import { fromRoundTrips } from '@/constants/photoAccess';
 import { photoAccessStore } from '@/stores/photoAccess';
 import { usePhotoAccess } from '@/hooks/usePhotoAccess';
@@ -382,7 +383,7 @@ export default function ChatScreen() {
       } else {
         // Network / send-side failures surface through the unified alert host
         // (client-side rule violations are handled inline upstream).
-        showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+        showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
       }
     } finally {
       setSending(false);
@@ -916,7 +917,7 @@ export default function ChatScreen() {
             await matchService.setMatchMute(matchId, next);
           } catch (e: any) {
             setMuted(!next);
-            showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+            showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
           }
         }}
         onClose={() => setMenuOpen(false)}

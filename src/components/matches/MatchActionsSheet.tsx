@@ -20,6 +20,7 @@ import { ErrorText } from '@/components/ui/ErrorText';
 import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { validateReportDescription } from '@/utils/validators';
+import { userFacingError } from '@/utils/errors';
 import type { ReportReason } from '@/types';
 
 const REPORT_REASONS: ReportReason[] = [
@@ -128,7 +129,7 @@ export function MatchActionsSheet({
           await blockService.blockUser(partnerId);
           onResolved?.();
         } catch (e: any) {
-          showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+          showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
         }
       },
     });
@@ -151,7 +152,7 @@ export function MatchActionsSheet({
           await hideMatch(matchId);
           onResolved?.();
         } catch (e: any) {
-          showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+          showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
         }
       },
     });
@@ -185,7 +186,7 @@ export function MatchActionsSheet({
       const msg =
         e instanceof ApiRequestError && e.status === 409
           ? t('matches.report.alreadyReported')
-          : e?.message ?? t('common.error');
+          : userFacingError(e, t);
       showAlert({ variant: 'error', title: t('common.error'), message: msg });
       setReportSubmitting(false);
     }

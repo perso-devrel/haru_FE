@@ -7,6 +7,7 @@ import { MenuCardButton } from '@/components/ui/MenuCardButton';
 import { WizardHeader } from '@/components/setup/WizardHeader';
 import { useAuthStore } from '@/stores/authStore';
 import { showAlert } from '@/stores/alertStore';
+import { userFacingError } from '@/utils/errors';
 import { colors } from '@/constants/colors';
 import { LEGAL_URLS } from '@/constants/legal';
 
@@ -47,7 +48,7 @@ export default function SettingsScreen() {
           showAlert({
             variant: 'error',
             title: t('common.error'),
-            message: e instanceof Error ? e.message : String(e),
+            message: userFacingError(e, t),
           });
         }
       },

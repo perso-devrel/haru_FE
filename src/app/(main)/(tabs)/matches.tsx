@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
 import { useMatches } from '@/hooks/useMatches';
 import { showAlert } from '@/stores/alertStore';
+import { userFacingError } from '@/utils/errors';
 import { setMatchesTabActive } from '@/lib/activeChat';
 import { colors } from '@/constants/colors';
 import type { MatchListItem } from '@/types';
@@ -47,7 +48,7 @@ export default function MatchesScreen() {
       try {
         await toggleMute(matchId, nextMuted);
       } catch (e: any) {
-        showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+        showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
       }
     },
     [toggleMute, t],

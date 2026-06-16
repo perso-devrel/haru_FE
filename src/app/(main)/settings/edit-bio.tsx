@@ -14,6 +14,7 @@ import { colors } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { validateVoiceIntro } from '@/utils/validators';
 import { buildVoiceIntroPayload } from '@/utils/voiceIntroPayload';
+import { userFacingError } from '@/utils/errors';
 
 export default function EditBioScreen() {
   const { t } = useTranslation();
@@ -77,7 +78,7 @@ export default function EditBioScreen() {
           message: t('moderation.blocked.toast'),
         });
       } else {
-        showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+        showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
       }
     }
   };

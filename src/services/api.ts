@@ -27,10 +27,12 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs = RE
   try {
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (e) {
+    // status=0 + stable `code` so the display layer can localize these without
+    // substring-matching the English text (see utils/errors.ts userFacingError).
     if (e instanceof Error && e.name === 'AbortError') {
-      throw new ApiRequestError(0, 'Network timeout. Please check your connection.');
+      throw new ApiRequestError(0, 'Network timeout. Please check your connection.', 'network_timeout');
     }
-    throw new ApiRequestError(0, 'Network error. Please check your connection.');
+    throw new ApiRequestError(0, 'Network error. Please check your connection.', 'network_error');
   } finally {
     clearTimeout(timer);
   }

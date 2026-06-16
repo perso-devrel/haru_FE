@@ -23,6 +23,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { showAlert } from '@/stores/alertStore';
 import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
+import { userFacingError } from '@/utils/errors';
 
 const RECORD_ORANGE = '#E8945F';
 const REGISTERED_PINK = colors.like;
@@ -114,7 +115,7 @@ export default function SetupStep2() {
         message: t('setupVoice.microphonePermissionRequired'),
       });
     } else {
-      showAlert({ variant: 'error', title: t('common.error'), message: result.message ?? '' });
+      showAlert({ variant: 'error', title: t('common.error'), message: t('common.tryAgainLater') });
     }
   };
 
@@ -122,7 +123,7 @@ export default function SetupStep2() {
     try {
       await stop();
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+      showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
     }
   };
 
@@ -157,7 +158,7 @@ export default function SetupStep2() {
       clear();
       setIsReRecording(false);
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('setupVoice.uploadFailed'), message: e.message });
+      showAlert({ variant: 'error', title: t('setupVoice.uploadFailed'), message: userFacingError(e, t) });
     }
   };
 

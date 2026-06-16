@@ -27,3 +27,32 @@ export function describeError(e: unknown, fallback = 'Unexpected error'): string
 export function errorStatus(e: unknown): number {
   return e instanceof ApiRequestError ? e.status : 0;
 }
+
+/**
+ * Localized, display-safe error message for user-facing alerts/modals.
+ *
+ * Unlike `describeError` (which returns the RAW message — for logs/inline
+ * dev surfaces), this NEVER surfaces an un-localized string. It buckets the
+ * error into a localized category:
+ *   - network / timeout (ApiRequestError status=0 with code) → connection copy
+ *   - server 5xx → generic server copy
+ *   - everything else (4xx, 'Session expired', unknown throwable) → `fallback`
+ *
+ * `fallback` lets a caller supply a more specific localized message for the
+ * "expected" failure of that screen (e.g. t('signupWizard.registerFailed'));
+ * when omitted it defaults to the generic t('common.tryAgainLater'). Network/
+ * timeout/server always win over the fallback so connectivity issues read
+ * correctly regardless of which screen raised them.
+ */
+export function userFacingError(
+  e: unknown,
+  t: (key: string) => string,
+  fallback?: string,
+): string {
+  if (e instanceof ApiRequestError) {
+    if (e.code === 'network_timeout') return t('common.networkTimeout');
+    if (e.code === 'network_error' || e.status === 0) return t('common.networkError');
+    if (e.status >= 500) return t('common.serverError');
+  }
+  return fallback ?? t('common.tryAgainLater');
+}

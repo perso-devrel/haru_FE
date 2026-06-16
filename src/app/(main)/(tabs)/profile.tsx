@@ -35,6 +35,7 @@ import { usePendingPhotoUploadsStore } from '@/stores/pendingPhotoUploadsStore';
 import { colors, gradients, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { calculateAge } from '@/utils/age';
+import { userFacingError } from '@/utils/errors';
 
 const BIO_AUDIO_POLL_INTERVAL_MS = 3000;
 const BIO_AUDIO_POLL_TIMEOUT_MS = 60_000;
@@ -189,7 +190,7 @@ export default function ProfileScreen() {
       // Network/BE upload failures route through the unified alert host —
       // different failure mode (server-side, retryable) from the local pick
       // rejections above.
-      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: e.message });
+      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: userFacingError(e, t) });
     }
   };
 
@@ -270,7 +271,7 @@ export default function ProfileScreen() {
         showAlert({ variant: 'info', title: t('profile.mainPhotoNotReady') });
         return;
       }
-      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: e.message });
+      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: userFacingError(e, t) });
     }
   };
 
@@ -282,7 +283,7 @@ export default function ProfileScreen() {
       setPhotoPreview(res.photo_id, uri);
       setPhotoBust((n) => n + 1);
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: e.message });
+      showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: userFacingError(e, t) });
     }
   };
 
@@ -311,7 +312,7 @@ export default function ProfileScreen() {
           await deletePhoto(index);
           setPhotoBust((n) => n + 1);
         } catch (e: any) {
-          showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: e.message });
+          showAlert({ variant: 'error', title: t('profile.uploadFailed'), message: userFacingError(e, t) });
         }
       },
     });
@@ -361,7 +362,7 @@ export default function ProfileScreen() {
       showAlert({
         variant: 'error',
         title: t('profile.downloadFailed'),
-        message: e?.message,
+        message: userFacingError(e, t),
       });
     }
   };
@@ -452,7 +453,7 @@ export default function ProfileScreen() {
         showAlert({
           variant: 'error',
           title: t('profile.uploadFailed'),
-          message: e.message ?? t('profile.photoConversionFailed'),
+          message: userFacingError(e, t, t('profile.photoConversionFailed')),
         });
       }
     },

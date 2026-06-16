@@ -30,6 +30,7 @@ import { usePendingPhotoUploadsStore } from "@/stores/pendingPhotoUploadsStore";
 import { showAlert } from "@/stores/alertStore";
 import { colors, radii, shadows } from "@/constants/colors";
 import { fonts } from "@/constants/fonts";
+import { userFacingError } from "@/utils/errors";
 
 // Layout constants mirror (tabs)/profile.tsx so the registered photo grid
 // looks identical to what the user will see on their public profile.
@@ -209,7 +210,7 @@ export default function SetupStep5() {
             showAlert({
                 variant: "error",
                 title: t("common.error"),
-                message: e?.message ?? t("signupWizard.registerFailed"),
+                message: userFacingError(e, t, t('signupWizard.registerFailed')),
             });
             return;
         }

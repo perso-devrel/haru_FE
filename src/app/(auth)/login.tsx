@@ -26,6 +26,7 @@ import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 import { LEGAL_URLS } from '@/constants/legal';
 import { validateEmail, validatePassword } from '@/utils/validators';
+import { userFacingError } from '@/utils/errors';
 
 const LOGIN_BG = require('../../../assets/images/login-day.png');
 const LOGIN_BG_BLUR = 12;
@@ -126,7 +127,7 @@ export default function LoginScreen() {
       showAlert({
         variant: 'error',
         title: t('auth.loginFailed'),
-        message: e?.message ?? String(e),
+        message: userFacingError(e, t),
       });
     } finally {
       setLoadingAction(null);
@@ -157,7 +158,7 @@ export default function LoginScreen() {
       showAlert({
         variant: 'error',
         title: t('auth.loginFailed'),
-        message: e?.message ?? String(e),
+        message: userFacingError(e, t),
       });
     } finally {
       setLoadingAction(null);
@@ -196,7 +197,7 @@ export default function LoginScreen() {
     showAlert({
       variant: 'error',
       title: signup ? t('auth.signupFailed') : t('auth.loginFailed'),
-      message: e instanceof Error ? e.message : String(e),
+      message: userFacingError(e, t),
     });
     return false;
   };

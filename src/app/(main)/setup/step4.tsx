@@ -21,6 +21,7 @@ import { fonts } from '@/constants/fonts';
 import { isLanguageCode, SUPPORTED_LANGUAGES, type LanguageCode } from '@/constants/languages';
 import { SUPPORTED_NATIONALITIES } from '@/constants/nationalities';
 import { MIN_AGE, MAX_AGE } from '@/utils/preferences';
+import { userFacingError } from '@/utils/errors';
 import type { PreferenceUpdateRequest } from '@/types';
 
 const GENDER_OPTIONS = ['male', 'female', 'other'] as const;
@@ -93,7 +94,7 @@ export default function SetupStep4() {
     try {
       await updatePreferences(prefs);
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('common.error'), message: e?.message ?? '' });
+      showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
       return;
     }
     router.push('/(main)/setup/step2');

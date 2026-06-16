@@ -21,6 +21,7 @@ import { fonts } from '@/constants/fonts';
 import { isLanguageCode, SUPPORTED_LANGUAGES, type LanguageCode } from '@/constants/languages';
 import { SUPPORTED_NATIONALITIES } from '@/constants/nationalities';
 import { MIN_AGE, MAX_AGE } from '@/utils/preferences';
+import { userFacingError } from '@/utils/errors';
 
 const GENDER_OPTIONS = ['male', 'female', 'other'] as const;
 
@@ -100,7 +101,7 @@ export default function PreferencesScreen() {
       bumpDiscoverReload();
       router.back();
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+      showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
     }
   };
 

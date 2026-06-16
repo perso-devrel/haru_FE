@@ -11,6 +11,7 @@ import { changePassword } from '@/services/auth';
 import { ApiRequestError } from '@/services/api';
 import { showAlert } from '@/stores/alertStore';
 import { validatePassword } from '@/utils/validators';
+import { userFacingError } from '@/utils/errors';
 import { colors } from '@/constants/colors';
 
 type FieldErrors = { current: string | null; next: string | null };
@@ -76,7 +77,7 @@ export default function ChangePasswordScreen() {
       showAlert({
         variant: 'error',
         title: t('common.error'),
-        message: e instanceof Error ? e.message : String(e),
+        message: userFacingError(e, t),
       });
     } finally {
       setLoading(false);

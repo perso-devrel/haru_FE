@@ -27,6 +27,7 @@ import { useInterestResolver } from '@/hooks/useInterestLabel';
 import { isLanguageCode, type LanguageCode } from '@/constants/languages';
 import { ErrorText } from '@/components/ui/ErrorText';
 import { validateDisplayName, validateBirthDate, DISPLAY_NAME_MAX } from '@/utils/validators';
+import { userFacingError } from '@/utils/errors';
 
 const GENDER_OPTIONS = ['male', 'female', 'other'] as const;
 
@@ -148,7 +149,7 @@ export default function EditProfileScreen() {
       });
       router.back();
     } catch (e: any) {
-      showAlert({ variant: 'error', title: t('common.error'), message: e.message });
+      showAlert({ variant: 'error', title: t('common.error'), message: userFacingError(e, t) });
     }
   };
 

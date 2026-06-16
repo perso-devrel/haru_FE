@@ -28,7 +28,9 @@ import i18n from '@/i18n';
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   environment: process.env.EXPO_PUBLIC_SENTRY_ENV ?? 'development',
-  tracesSampleRate: 0.2,
+  // 성능 트레이스 비활성 (0). 무료 플랜 스팬 쿼터 보호 + 현재 트레이싱 데이터 미사용.
+  // 앱 속도/병목 분석이 필요해지면 0.05~0.2 로 올린다.
+  tracesSampleRate: 0,
 });
 
 SplashScreen.preventAutoHideAsync().catch(() => {});

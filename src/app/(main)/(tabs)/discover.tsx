@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SwipeCard } from '@/components/discover/SwipeCard';
-import { computeDiscoverGate, getDiscoverGateStep } from '@/components/discover/DiscoverGate';
+import { computeDiscoverGate, showLikeGate } from '@/components/discover/DiscoverGate';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { Button } from '@/components/ui/Button';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
@@ -87,25 +87,7 @@ export default function DiscoverScreen() {
     // 안 보여 매치 불가). 좋아요는 기록하지 않고(=카드 유지, 돌아와 다시 좋아요)
     // 부족한 단계로 등록을 유도한다. pass 는 그대로 기록/처리.
     if (direction === 'like' && gate.gated) {
-      const step = getDiscoverGateStep(gate, t);
-      if (step) {
-        const route = step.route;
-        if (route) {
-          // 세 경우(목소리/한마디/사진) 모두 통일된 문구를 제목으로 노출하고,
-          // 버튼만 부족한 단계별로 다르게(step.ctaLabel) 보여준다.
-          showAlert({
-            variant: 'confirm',
-            title: t('discover.likeGateMessage'),
-            closable: true,
-            confirmText: step.ctaLabel,
-            stackedActions: true,
-            onConfirm: () => router.push(route),
-          });
-        } else {
-          // 클론 생성 중 — 기다리면 자동으로 풀린다.
-          showAlert({ variant: 'info', title: step.title, message: step.hint });
-        }
-      }
+      showLikeGate(gate, t);
       return;
     }
 

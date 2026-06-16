@@ -1,10 +1,5 @@
 import { router } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Button } from '@/components/ui/Button';
-import { colors, gradients, radii, shadows } from '@/constants/colors';
-import { fonts } from '@/constants/fonts';
+import { showAlert } from '@/stores/alertStore';
 import type { Profile } from '@/types';
 
 // 디스커버 참여 전제조건 게이트 — 디스커버 탭과 받은 좋아요 탭이 공유한다.
@@ -90,82 +85,26 @@ export function getDiscoverGateStep(
   };
 }
 
-export function DiscoverGateScreen({
-  state,
-  t,
-}: {
-  state: DiscoverGateState;
-  t: (key: string) => string;
-}) {
+// like-wall — 미등록 사용자가 좋아요를 눌렀을 때 전체 화면 게이트 대신 모달로
+// 부족한 단계를 안내한다. 디스커버 탭과 받은 좋아요 탭이 공유(동일 UX).
+// gated 가 아니면 아무것도 안 띄운다(호출처에서 가드하지만 방어적으로 확인).
+export function showLikeGate(state: DiscoverGateState, t: (key: string) => string) {
   const step = getDiscoverGateStep(state, t);
-  if (!step) return null;
+  if (!step) return;
   const route = step.route;
-
-  return (
-    <View style={styles.empty}>
-      <LinearGradient
-        colors={[...gradients.glow]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.emptyHalo, shadows.glow]}
-      >
-        <Ionicons name={step.icon} size={38} color={colors.white} />
-      </LinearGradient>
-      <Text style={styles.emptyTitle}>{step.title}</Text>
-      <Text style={styles.emptyText}>{step.hint}</Text>
-      {route && (
-        <Button
-          title={step.ctaLabel}
-          onPress={() => router.push(route)}
-          style={styles.ctaBtn}
-          textStyle={styles.ctaBtnText}
-        />
-      )}
-    </View>
-  );
+  if (route) {
+    // 세 경우(목소리/한마디/사진) 모두 통일된 문구를 제목으로 노출하고,
+    // 버튼만 부족한 단계별로 다르게(step.ctaLabel) 보여준다.
+    showAlert({
+      variant: 'confirm',
+      title: t('discover.likeGateMessage'),
+      closable: true,
+      confirmText: step.ctaLabel,
+      stackedActions: true,
+      onConfirm: () => router.push(route),
+    });
+  } else {
+    // 클론 생성 중 — 기다리면 자동으로 풀린다.
+    showAlert({ variant: 'info', title: step.title, message: step.hint });
+  }
 }
-
-const styles = StyleSheet.create({
-  empty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyHalo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontFamily: fonts.bold,
-    color: colors.text,
-    letterSpacing: 0.3,
-    textAlign: 'center',
-    textShadowColor: 'rgba(255,244,238,0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    marginTop: 10,
-    textAlign: 'center',
-    lineHeight: 21,
-    textShadowColor: 'rgba(255,244,238,0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
-  },
-  ctaBtn: {
-    marginTop: 28,
-    borderRadius: radii.pill,
-  },
-  ctaBtnText: {
-    paddingHorizontal: 4,
-  },
-});

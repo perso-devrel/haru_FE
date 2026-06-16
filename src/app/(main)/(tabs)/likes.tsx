@@ -12,9 +12,11 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SwipeCard } from '@/components/discover/SwipeCard';
+import { computeDiscoverGate, DiscoverGateScreen } from '@/components/discover/DiscoverGate';
 import { Button } from '@/components/ui/Button';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
 import { useReceivedLikes } from '@/hooks/useReceivedLikes';
+import { useAuthStore } from '@/stores/authStore';
 import { showAlert } from '@/stores/alertStore';
 import { colors, gradients, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
@@ -23,10 +25,14 @@ import { fonts } from '@/constants/fonts';
 // 디스커버와 동일한 SwipeCard 컴포넌트를 재사용해 UX 일관성 유지.
 // 차이점:
 //   - 카드 풀이 비어있을 때 디스커버 탭으로 유도하는 CTA
-//   - 별도 게이팅 없음 (사용자 결정: 보이스 청취 강제 게이팅 미적용)
 //   - 일일 50장 한도는 디스커버와 공유
+// 디스커버와 동일한 참여 전제조건 게이트(클론/한마디/사진) 적용 — 디스커버에서
+// 유도받지 못한 채 받은 좋아요 탭으로 진입한 미완성 프로필 사용자도 동일하게
+// 등록으로 유도한다(컴포넌트 공유로 두 탭의 게이트 조건이 갈라지지 않게).
 export default function LikesScreen() {
   const { t } = useTranslation();
+  const profile = useAuthStore((s) => s.profile);
+  const gate = computeDiscoverGate(profile);
   const {
     candidates,
     loading,
@@ -52,9 +58,21 @@ export default function LikesScreen() {
   // pull-to-refresh 로 사용자 인지 가능한 한도 내에서 신선도 유지.
   useFocusEffect(
     useCallback(() => {
+      if (gate.gated) return;
       loadCandidates();
-    }, [loadCandidates]),
+    }, [gate.gated, loadCandidates]),
   );
+
+  // 참여 전제조건 미충족 시 카드 대신 게이트 화면 — dailyCount/후보 로드보다
+  // 우선한다(미완성 프로필은 어차피 받은 좋아요가 0이지만, 디스커버와 동일한
+  // 등록 유도를 노출해 사각지대를 없앤다).
+  if (gate.gated) {
+    return (
+      <PhotoBackground variant="app">
+        <DiscoverGateScreen state={gate} t={t} />
+      </PhotoBackground>
+    );
+  }
 
   // dailyCountReady 가 false 인 동안에도 PhotoBackground 를 루트로 유지하고
   // 그 안에 스피너만 띄운다. 사진 없는 별도 LoadingScreen 을 반환하면 탭 진입

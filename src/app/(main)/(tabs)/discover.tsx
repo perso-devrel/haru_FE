@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SwipeCard } from '@/components/discover/SwipeCard';
+import { computeDiscoverGate, getDiscoverGateStep } from '@/components/discover/DiscoverGate';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { Button } from '@/components/ui/Button';
 import { PhotoBackground } from '@/components/ui/PhotoBackground';
@@ -45,15 +46,12 @@ export default function DiscoverScreen() {
     }
   }, [loadCandidates]);
 
-  const voiceReady = profile?.voice_clone_status === 'ready';
-  const voiceProcessing = profile?.voice_clone_status === 'processing';
-  const bioReady = Boolean(profile?.voice_intro && profile.voice_intro.trim().length > 0);
-  // Discover is two-way: the user must be visible to others to participate
-  // meaningfully. With zero photos the BE-rendered match cards have no
-  // image to show, so we gate browsing too — otherwise a user with no
-  // photos can swipe but is invisible in everyone else's feed.
-  const hasPhoto = (profile?.photos.length ?? 0) > 0;
-  const gated = !voiceReady || !bioReady || !hasPhoto;
+  // 디스커버 참여 전제조건 게이트(클론/한마디/사진). 받은 좋아요 탭과 공유하는
+  // computeDiscoverGate 로 단일화 — 두 탭의 게이트 조건이 갈라지지 않게 한다.
+  // 디스커버는 더 이상 하드 게이트하지 않는다: 미등록 사용자도 카드를 "구경" 하게
+  // 두어 등록 동기를 만들고(클론 단계 이탈 완화), 실제 참여 행동인 "좋아요" 시점에만
+  // 등록을 유도한다(아래 onSwipe like-wall). pass 는 그대로 처리.
+  const gate = computeDiscoverGate(profile);
 
   // 초기 후보 fetch 를 quota 동기화(syncQuota)와 병렬로 — dailyCountReady 를
   // 더는 기다리지 않는다. 예전엔 syncQuota → dailyCountReady → loadCandidates
@@ -64,10 +62,10 @@ export default function DiscoverScreen() {
   // 가 dailyCount 를 곧 정정해 한도 화면도 정상 노출된다. 초기 1회만 발화.
   const didInitialFetchRef = useRef(false);
   useEffect(() => {
-    if (gated || didInitialFetchRef.current) return;
+    if (didInitialFetchRef.current) return;
     didInitialFetchRef.current = true;
     loadCandidates();
-  }, [gated, loadCandidates]);
+  }, [loadCandidates]);
 
   // Auto-refresh trigger: the preferences screen bumps `reloadVersion` on
   // save so the candidate list refetches with the new filters without the
@@ -78,26 +76,38 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (lastSeenReloadRef.current === reloadVersion) return;
     lastSeenReloadRef.current = reloadVersion;
-    if (!gated && dailyCountReady) loadCandidates();
-  }, [reloadVersion, gated, dailyCountReady, loadCandidates]);
-
-  if (gated) {
-    return (
-      <PhotoBackground variant="app">
-        <GateScreen
-          voiceReady={voiceReady}
-          voiceProcessing={voiceProcessing}
-          bioReady={bioReady}
-          hasPhoto={hasPhoto}
-          t={t}
-        />
-      </PhotoBackground>
-    );
-  }
+    if (dailyCountReady) loadCandidates();
+  }, [reloadVersion, dailyCountReady, loadCandidates]);
 
   const onSwipe = async (direction: 'like' | 'pass') => {
     const candidate = candidates[0];
     if (!candidate) return;
+
+    // like-wall: 미등록 사용자의 좋아요는 어차피 기능하지 않는다(상대 피드에
+    // 안 보여 매치 불가). 좋아요는 기록하지 않고(=카드 유지, 돌아와 다시 좋아요)
+    // 부족한 단계로 등록을 유도한다. pass 는 그대로 기록/처리.
+    if (direction === 'like' && gate.gated) {
+      const step = getDiscoverGateStep(gate, t);
+      if (step) {
+        const route = step.route;
+        if (route) {
+          // 세 경우(목소리/한마디/사진) 모두 통일된 문구를 제목으로 노출하고,
+          // 버튼만 부족한 단계별로 다르게(step.ctaLabel) 보여준다.
+          showAlert({
+            variant: 'confirm',
+            title: t('discover.likeGateMessage'),
+            closable: true,
+            confirmText: step.ctaLabel,
+            stackedActions: true,
+            onConfirm: () => router.push(route),
+          });
+        } else {
+          // 클론 생성 중 — 기다리면 자동으로 풀린다.
+          showAlert({ variant: 'info', title: step.title, message: step.hint });
+        }
+      }
+      return;
+    }
 
     const res = await handleSwipe(candidate.id, direction);
 
@@ -194,99 +204,12 @@ export default function DiscoverScreen() {
         <SwipeCard
           key={current.id}
           candidate={current}
+          gated={gate.gated}
           onLike={() => onSwipe('like')}
           onPass={() => onSwipe('pass')}
         />
       </ScrollView>
     </PhotoBackground>
-  );
-}
-
-function GateScreen({
-  voiceReady,
-  voiceProcessing,
-  bioReady,
-  hasPhoto,
-  t,
-}: {
-  voiceReady: boolean;
-  voiceProcessing: boolean;
-  bioReady: boolean;
-  hasPhoto: boolean;
-  t: (key: string) => string;
-}) {
-  // Guide the user through the missing step in the natural signup order:
-  // voice first, bio next, photo last.
-  const goVoice = () => router.push('/(main)/settings/voice');
-  const goBio = () => router.push('/(main)/settings/edit-bio');
-  const goPhoto = () => router.push('/(main)/(tabs)/profile');
-
-  if (voiceProcessing) {
-    return (
-      <View style={styles.empty}>
-        <LinearGradient
-          colors={[...gradients.glow]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.emptyHalo, shadows.glow]}
-        >
-          <Ionicons name="hourglass-outline" size={38} color={colors.white} />
-        </LinearGradient>
-        <Text style={styles.emptyTitle}>{t('discover.voiceProcessingTitle')}</Text>
-        <Text style={styles.emptyText}>{t('discover.voiceProcessingHint')}</Text>
-      </View>
-    );
-  }
-
-  // Pick the first unmet prerequisite — voice -> bio -> photo. Each step
-  // shows its own icon, hint, and CTA so the user always sees the single
-  // next action instead of a vague "complete your profile" instruction.
-  let icon: 'mic-outline' | 'create-outline' | 'image-outline';
-  let title: string;
-  let hint: string;
-  let ctaLabel: string;
-  let onCtaPress: () => void;
-
-  if (!voiceReady) {
-    icon = 'mic-outline';
-    title = t('discover.lockedVoiceTitle');
-    hint = t('discover.lockedVoiceHint');
-    ctaLabel = t('discover.lockedGoVoice');
-    onCtaPress = goVoice;
-  } else if (!bioReady) {
-    icon = 'create-outline';
-    title = t('discover.lockedBioTitle');
-    hint = t('discover.lockedBioHint');
-    ctaLabel = t('discover.lockedGoBio');
-    onCtaPress = goBio;
-  } else {
-    // hasPhoto must be the false one here — only remaining gate.
-    icon = 'image-outline';
-    title = t('discover.lockedPhotoTitle');
-    hint = t('discover.lockedPhotoHint');
-    ctaLabel = t('discover.lockedGoPhoto');
-    onCtaPress = goPhoto;
-  }
-
-  return (
-    <View style={styles.empty}>
-      <LinearGradient
-        colors={[...gradients.glow]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.emptyHalo, shadows.glow]}
-      >
-        <Ionicons name={icon} size={38} color={colors.white} />
-      </LinearGradient>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptyText}>{hint}</Text>
-      <Button
-        title={ctaLabel}
-        onPress={onCtaPress}
-        style={styles.ctaBtn}
-        textStyle={styles.ctaBtnText}
-      />
-    </View>
   );
 }
 

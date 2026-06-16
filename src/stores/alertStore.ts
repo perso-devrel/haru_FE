@@ -14,6 +14,12 @@ export interface AlertSpec {
   confirmText?: string;
   /** When set, a secondary cancel button is rendered with this label. */
   cancelText?: string;
+  /**
+   * Render an X (close) button at the card's top-right that dismisses the
+   * alert (fires onCancel). Use as a lightweight alternative to a labelled
+   * cancel button — e.g. a single-CTA prompt the user can simply close.
+   */
+  closable?: boolean;
   /** Renders the primary button in the error/danger color. */
   destructive?: boolean;
   /** Stack actions vertically (primary on top) instead of side-by-side. */

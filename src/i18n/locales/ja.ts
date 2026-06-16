@@ -127,12 +127,13 @@ export default {
             "相手の声を聞くには、まず自分の声を登録する必要があります。",
         lockedBioHint:
             "あなたの声で自動生成されて相手に届きます。",
-        lockedGoVoice: "今すぐ登録",
-        lockedGoBio: "今すぐ登録",
+        lockedGoVoice: "声を登録する",
+        lockedGoBio: "ボイスひとことを登録する",
         lockedPhotoHint: "プロフィール写真を1枚以上登録してください。",
         lockedGoPhoto: "写真を登録する",
         voiceProcessingTitle: "音声を生成中です",
-        voiceProcessingHint: "少々お待ちください。生成が完了すると自動的に探索を始められます。",
+        voiceProcessingHint: "少々お待ちください。",
+        likeGateMessage: "「いいね」を送るにはプロフィールを完成してください",
         passReset: {
             button: "スキップした人をもう一度見る",
             empty_zero: "まだスキップした人がいません",

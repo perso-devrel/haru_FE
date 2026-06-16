@@ -131,9 +131,13 @@ interface SwipeCardProps {
     candidate: DiscoverCandidate;
     onLike: () => void;
     onPass: () => void;
+    // 게이트 상태(미등록)에서는 like 가 카드를 넘기지 않고 등록 유도 모달만 띄운다.
+    // 이 경우 카드를 화면 밖으로 날려보내면 모달을 닫아도 빈 화면이 남으므로,
+    // like-스와이프 시 fly-out 대신 제자리로 스프링백한다.
+    gated?: boolean;
 }
 
-export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
+export function SwipeCard({ candidate, onLike, onPass, gated = false }: SwipeCardProps) {
     const { t } = useTranslation();
     const { width: SCREEN_WIDTH } = useWindowDimensions();
     const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -202,6 +206,24 @@ export function SwipeCard({ candidate, onLike, onPass }: SwipeCardProps) {
         if (event.nativeEvent.state !== State.END) return;
         const tx = event.nativeEvent.translationX;
         if (tx > SWIPE_THRESHOLD) {
+            if (gated) {
+                // 게이트 상태의 like: 카드를 넘기지 않으므로 fly-out 하지 않고
+                // 제자리로 되돌린 뒤 모달만 띄운다(닫으면 카드가 그대로 보임).
+                Animated.spring(translateX, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    damping: 18,
+                    stiffness: 180,
+                }).start();
+                Animated.spring(translateY, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    damping: 18,
+                    stiffness: 180,
+                }).start();
+                onLike();
+                return;
+            }
             Animated.timing(translateX, {
                 toValue: FLY_OUT_DISTANCE,
                 duration: 240,

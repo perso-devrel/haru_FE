@@ -127,13 +127,13 @@ export default {
       'To hear other people\'s voices, you need to register your own voice first.',
     lockedBioHint:
       'It will be auto-generated in your own voice and played for others.',
-    lockedGoVoice: 'Register now',
-    lockedGoBio: 'Register now',
+    lockedGoVoice: 'Register your voice',
+    lockedGoBio: 'Set your voice line',
     lockedPhotoHint: 'Please add at least one profile photo.',
     lockedGoPhoto: 'Add a photo',
     voiceProcessingTitle: 'Generating your voice',
-    voiceProcessingHint:
-      "Hang tight — once your voice is ready you'll be able to start discovering.",
+    voiceProcessingHint: 'Please wait a moment.',
+    likeGateMessage: 'Complete your profile to send a like',
     passReset: {
       button: 'See skipped people again',
       empty_zero: "You haven't skipped anyone yet",

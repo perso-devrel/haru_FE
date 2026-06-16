@@ -39,8 +39,9 @@ function AlertHostModal({
     onDismiss(spec?.id);
     cb?.();
   };
-  // Backdrop / hardware back: act as cancel when present, otherwise confirm.
-  const handleBackdrop = spec?.cancelText ? handleCancel : handleConfirm;
+  // Backdrop / hardware back: act as cancel when a cancel affordance exists
+  // (labelled cancel button OR a closable X), otherwise confirm.
+  const handleBackdrop = spec?.cancelText || spec?.closable ? handleCancel : handleConfirm;
 
   return (
     <Modal
@@ -63,6 +64,8 @@ function AlertHostModal({
             title={spec.title}
             message={spec.message}
             stackedActions={spec.stackedActions}
+            onClose={spec.closable ? handleCancel : undefined}
+            closeLabel={t('common.cancel')}
             primary={{
               label: spec.confirmText ?? t('common.confirm'),
               onPress: handleConfirm,

@@ -127,12 +127,13 @@ export default {
             "상대방의 목소리를 듣기 위해서는 먼저 나의 목소리를 등록해야 해요.",
         lockedBioHint:
             "나의 목소리로 음성이 자동 생성되어 상대방에게 들려요.",
-        lockedGoVoice: "지금 등록하기",
-        lockedGoBio: "지금 등록하기",
+        lockedGoVoice: "목소리 등록하러 가기",
+        lockedGoBio: "보이스 한마디 등록하러 가기",
         lockedPhotoHint: "프로필 사진을 한 장 이상 등록해주세요.",
         lockedGoPhoto: "사진 등록하러 가기",
         voiceProcessingTitle: "음성 생성 중입니다",
-        voiceProcessingHint: "잠시만 기다려주세요. 음성 생성이 끝나면 자동으로 탐색을 시작할 수 있어요.",
+        voiceProcessingHint: "잠시만 기다려주세요.",
+        likeGateMessage: "Like를 보내려면 프로필을 완성해주세요",
         passReset: {
             button: "넘긴 사람 다시 보기",
             empty_zero: "아직 넘긴 사람이 없어요",

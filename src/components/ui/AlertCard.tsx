@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, shadows } from '@/constants/colors';
 import { fonts } from '@/constants/fonts';
 
@@ -23,6 +24,10 @@ interface AlertCardProps {
   style?: ViewStyle;
   /** Stack actions vertically (primary on top, secondary below) instead of side-by-side. */
   stackedActions?: boolean;
+  /** When set, render an X at the top-right that dismisses the card. */
+  onClose?: () => void;
+  /** a11y label for the close button. */
+  closeLabel?: string;
 }
 
 // The variant's only remaining job is to color the primary CTA — error reads
@@ -43,13 +48,26 @@ export function AlertCard({
   children,
   style,
   stackedActions = false,
+  onClose,
+  closeLabel,
 }: AlertCardProps) {
   const accent = VARIANT_ACCENTS[variant];
   const a11yRole = variant === 'error' ? 'alert' : 'none';
 
   return (
     <View accessibilityRole={a11yRole} style={[styles.card, style]}>
-      <Text style={styles.title}>{title}</Text>
+      {onClose ? (
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={closeLabel}
+          hitSlop={10}
+          style={({ pressed }) => [styles.close, pressed && styles.btnPressed]}
+        >
+          <Ionicons name="close" size={22} color={colors.textSecondary} />
+        </Pressable>
+      ) : null}
+      <Text style={[styles.title, onClose && styles.titleWithClose]}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
 
       {children}
@@ -101,6 +119,16 @@ const styles = StyleSheet.create({
     maxWidth: 340,
     ...shadows.card,
   },
+  close: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
   title: {
     fontSize: 18,
     fontFamily: fonts.bold,
@@ -108,6 +136,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.4,
     lineHeight: 24,
+  },
+  // Keep a centered title clear of the top-right X when closable.
+  titleWithClose: {
+    paddingHorizontal: 20,
   },
   message: {
     marginTop: 8,

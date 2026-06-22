@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { routing } from '@/i18n/routing';
 import { appStoreUrl, playStoreUrl } from '@/lib/links';
 import LangSwitcher from './LangSwitcher';
-import { AppleLogo, GooglePlayLogo } from './StoreLogos';
+import StoreBadge from './StoreBadge';
 
 /**
  * Absolutely-positioned header — it sits at the top of the page and
@@ -17,6 +17,7 @@ import { AppleLogo, GooglePlayLogo } from './StoreLogos';
  */
 export default function Navbar() {
   const locale = useLocale();
+  const t = useTranslations('download');
   const prefix = locale === routing.defaultLocale ? '' : `/${locale}`;
 
   return (
@@ -41,28 +42,28 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Right cluster: small store buttons + language toggle.
-            Store buttons reuse the locale-aware links so they match the
-            DownloadCTA section (Play forces hl/gl, App Store pins storefront). */}
+        {/* Right cluster: small store badges (same black design as the
+            DownloadCTA section, smaller scale) + language toggle. They reuse
+            the locale-aware links (Play forces hl/gl, App Store pins
+            storefront). Caption/name collapse below `sm` so the row fits on
+            phones (logo-only black pill). */}
         <div className="flex items-center gap-2">
-          <a
+          <StoreBadge
             href={appStoreUrl(locale)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="App Store"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/80 text-[color:var(--color-text)] transition hover:border-[color:var(--color-primary)]/40 hover:bg-white"
-          >
-            <AppleLogo size={17} />
-          </a>
-          <a
+            store="apple"
+            caption={t('appStoreCaption')}
+            name="App Store"
+            size="sm"
+            collapseTextOnMobile
+          />
+          <StoreBadge
             href={playStoreUrl(locale)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Google Play"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/80 text-[color:var(--color-text)] transition hover:border-[color:var(--color-primary)]/40 hover:bg-white"
-          >
-            <GooglePlayLogo size={15} />
-          </a>
+            store="google"
+            caption={t('playCaption')}
+            name="Google Play"
+            size="sm"
+            collapseTextOnMobile
+          />
           <LangSwitcher />
         </div>
       </div>

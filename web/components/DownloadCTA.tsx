@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { appStoreUrl, playStoreUrl } from '@/lib/links';
-import { AppleLogo, GooglePlayLogo } from './StoreLogos';
+import StoreBadge from './StoreBadge';
 
 /**
  * Final call-to-action: real App Store + Google Play download buttons.
@@ -8,9 +8,6 @@ import { AppleLogo, GooglePlayLogo } from './StoreLogos';
  * Store badges are the recognizable black pill with white logo + caption,
  * so the brand marks read instantly regardless of locale.
  */
-const badgeClass =
-  'inline-flex items-center gap-3 rounded-2xl bg-[#111111] px-6 py-3.5 text-white shadow-[0_14px_34px_-12px_rgba(0,0,0,0.45)] transition hover:scale-[1.03] hover:bg-black';
-
 export default function DownloadCTA() {
   const t = useTranslations('download');
   const locale = useLocale();
@@ -29,33 +26,20 @@ export default function DownloadCTA() {
         </p>
 
         <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a
+          <StoreBadge
             href={appStoreUrl(locale)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={badgeClass}
-            aria-label={`${t('appStoreCaption')} App Store`}
-          >
-            <AppleLogo size={26} />
-            <span className="text-left leading-tight">
-              <span className="block text-[11px] font-medium opacity-80">{t('appStoreCaption')}</span>
-              <span className="block text-lg font-semibold">App Store</span>
-            </span>
-          </a>
-
-          <a
+            store="apple"
+            caption={t('appStoreCaption')}
+            name="App Store"
+            size="lg"
+          />
+          <StoreBadge
             href={playStoreUrl(locale)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={badgeClass}
-            aria-label={`${t('playCaption')} Google Play`}
-          >
-            <GooglePlayLogo size={24} />
-            <span className="text-left leading-tight">
-              <span className="block text-[11px] font-medium opacity-80">{t('playCaption')}</span>
-              <span className="block text-lg font-semibold">Google Play</span>
-            </span>
-          </a>
+            store="google"
+            caption={t('playCaption')}
+            name="Google Play"
+            size="lg"
+          />
         </div>
 
         <p className="mt-8 text-xs text-[color:var(--color-text-light)]">{t('ageNote')}</p>

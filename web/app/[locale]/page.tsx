@@ -2,7 +2,7 @@ import { setRequestLocale } from 'next-intl/server';
 import Hero from '@/components/Hero';
 import FeatureSection from '@/components/FeatureSection';
 import RecommendSection from '@/components/RecommendSection';
-import Waitlist from '@/components/Waitlist';
+import DownloadCTA from '@/components/DownloadCTA';
 
 export default async function HomePage({
   params,
@@ -20,7 +20,7 @@ export default async function HomePage({
       <Hero />
       <FeatureSection />
       <RecommendSection />
-      <Waitlist />
+      <DownloadCTA />
     </main>
   );
 }

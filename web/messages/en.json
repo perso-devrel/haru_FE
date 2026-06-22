@@ -51,18 +51,12 @@
       "Anyone who feels uneasy showing real photos"
     ]
   },
-  "waitlist": {
-    "eyebrow": "Early access",
-    "title": "Be the first to meet haru",
-    "description": "Want to try haru for free? Enter your device model and email — we'll reach out at that address as soon as the app launches.",
-    "devicePlaceholder": "Select your device",
-    "emailPlaceholder": "Email address",
-    "submit": "Sign up",
-    "submitting": "Submitting...",
-    "success": "You're on the list. We'll email you the moment we launch.",
-    "errorGeneric": "Something went wrong. Please try again in a moment.",
-    "errorEmail": "Please enter a valid email address.",
-    "errorDevice": "Please enter your device model.",
+  "download": {
+    "eyebrow": "Download now",
+    "title": "Start with haru today",
+    "description": "Get haru on the App Store and Google Play.",
+    "appStoreCaption": "Download on the",
+    "playCaption": "Get it on",
     "ageNote": "Must be 18 or older to use haru."
   },
   "footer": {

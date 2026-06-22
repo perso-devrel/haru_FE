@@ -51,18 +51,12 @@
       "実写写真の公開がためらわれる方"
     ]
   },
-  "waitlist": {
-    "eyebrow": "事前申し込み",
-    "title": "haru をいち早く体験",
-    "description": "無料体験をご希望の方は、機種とメールアドレスを入力してください。アプリのリリース後、そのアドレスへご連絡します。",
-    "devicePlaceholder": "機種を選択",
-    "emailPlaceholder": "メールアドレス",
-    "submit": "申し込む",
-    "submitting": "送信中...",
-    "success": "受け付けました。リリース時にご入力のアドレスへご連絡します。",
-    "errorGeneric": "問題が発生しました。しばらくして再度お試しください。",
-    "errorEmail": "正しいメールアドレスを入力してください。",
-    "errorDevice": "機種を入力してください。",
+  "download": {
+    "eyebrow": "今すぐダウンロード",
+    "title": "haru を今すぐ始めよう",
+    "description": "App Store と Google Play で haru をお試しください。",
+    "appStoreCaption": "ダウンロード",
+    "playCaption": "ダウンロード",
     "ageNote": "18歳以上の方のみご利用いただけます。"
   },
   "footer": {

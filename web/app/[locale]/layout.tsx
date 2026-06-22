@@ -52,9 +52,9 @@ export default async function LocaleLayout({
   }
   setRequestLocale(locale);
 
-  // 클라이언트 컴포넌트(예: Waitlist 폼)가 useTranslations 로 메시지를 읽으려면
+  // 클라이언트 컴포넌트(예: LangSwitcher)가 useTranslations 로 메시지를 읽으려면
   // provider 에 messages 를 명시적으로 넘겨야 한다. 넘기지 않으면 클라 쪽엔
-  // 메시지가 없어 키가 그대로(`waitlist.eyebrow` 등) 렌더된다.
+  // 메시지가 없어 키가 그대로 렌더된다.
   const messages = await getMessages();
 
   return (

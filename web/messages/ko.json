@@ -51,18 +51,12 @@
             "실사 사진 노출이 부담스러우신 분"
         ]
     },
-    "waitlist": {
-        "eyebrow": "사전 신청",
-        "title": "haru를 가장 먼저 만나보세요",
-        "description": "무료 체험을 원하시면 기종과 메일 주소를 입력해주세요. 앱이 출시되는 대로 해당 주소로 연락드리겠습니다.",
-        "devicePlaceholder": "기종 선택",
-        "emailPlaceholder": "메일 주소",
-        "submit": "신청하기",
-        "submitting": "신청 중...",
-        "success": "신청이 완료됐어요. 출시되면 입력하신 주소로 연락드릴게요.",
-        "errorGeneric": "잠시 후 다시 시도해주세요.",
-        "errorEmail": "올바른 메일 주소를 입력해주세요.",
-        "errorDevice": "기종을 입력해주세요.",
+    "download": {
+        "eyebrow": "지금 다운로드",
+        "title": "haru, 지금 바로 시작하세요",
+        "description": "App Store와 Google Play에서 haru를 만나보세요.",
+        "appStoreCaption": "다운로드",
+        "playCaption": "다운로드",
         "ageNote": "만 18세 이상만 이용할 수 있어요."
     },
     "footer": {

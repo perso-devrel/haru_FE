@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { routing } from '@/i18n/routing';
+import { appStoreUrl, playStoreUrl } from '@/lib/links';
 import LangSwitcher from './LangSwitcher';
+import { AppleLogo, GooglePlayLogo } from './StoreLogos';
 
 /**
  * Absolutely-positioned header — it sits at the top of the page and
@@ -38,7 +40,31 @@ export default function Navbar() {
             haru
           </span>
         </Link>
-        <LangSwitcher />
+
+        {/* Right cluster: small store buttons + language toggle.
+            Store buttons reuse the locale-aware links so they match the
+            DownloadCTA section (Play forces hl/gl, App Store pins storefront). */}
+        <div className="flex items-center gap-2">
+          <a
+            href={appStoreUrl(locale)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="App Store"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/80 text-[color:var(--color-text)] transition hover:border-[color:var(--color-primary)]/40 hover:bg-white"
+          >
+            <AppleLogo size={17} />
+          </a>
+          <a
+            href={playStoreUrl(locale)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Google Play"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-white/80 text-[color:var(--color-text)] transition hover:border-[color:var(--color-primary)]/40 hover:bg-white"
+          >
+            <GooglePlayLogo size={15} />
+          </a>
+          <LangSwitcher />
+        </div>
       </div>
     </header>
   );

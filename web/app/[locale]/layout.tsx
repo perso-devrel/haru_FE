@@ -23,6 +23,11 @@ export async function generateMetadata({
     metadataBase: new URL(getSiteUrl()),
     title: t('title'),
     description: t('description'),
+    // 네이버 서치어드바이저 사이트 소유확인. 공개 토큰이라 하드코딩 안전.
+    // 모든 [locale] 페이지 <head> 에 <meta name="naver-site-verification"> 렌더.
+    verification: {
+      other: { 'naver-site-verification': 'b8d82b182c724388e94ceec5a170d933723be1b8' },
+    },
     openGraph: {
       title: t('title'),
       description: t('description'),

@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import LegalMarkdown from '@/components/LegalMarkdown';
 import { isAppLocale } from '@/i18n/routing';
 import { loadLegalMarkdown } from '@/lib/legal';
+import { buildAlternates } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -16,6 +17,7 @@ export async function generateMetadata({
     title: t('childSafety.title'),
     description: t('childSafety.description'),
     robots: { index: true, follow: true },
+    alternates: buildAlternates(locale, 'child-safety'),
   };
 }
 

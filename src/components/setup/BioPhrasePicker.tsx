@@ -73,10 +73,8 @@ export function BioPhrasePicker({
     initialPreset?.id ?? (initialIsCustom ? 'custom' : null),
   );
   const [customText, setCustomText] = useState(initialIsCustom ? value : '');
-  // Ref to the custom TextInput so we can programmatically focus it the moment
-  // the user taps the custom card. Without this the user must tap twice — once
-  // to flip selectedId='custom' (the wrapping Pressable wins because the input
-  // is editable=false initially), then again to focus the now-editable input.
+  // Ref to the custom TextInput so we can imperatively focus it (second tap on
+  // the custom card, once selected) and blur it (when a preset card is picked).
   const customInputRef = useRef<TextInput>(null);
 
   // Hold the latest onChange in a ref so the resync effect doesn't re-fire on
@@ -113,15 +111,25 @@ export function BioPhrasePicker({
 
   const handleSelectPreset = (id: string, text: string) => {
     if (disabled) return;
+    // Picking a preset releases the custom input's focus and dismisses the
+    // keyboard — keyboardShouldPersistTaps="handled" would otherwise keep it up.
+    customInputRef.current?.blur();
     setSelectedId(id);
     onChange(text, id);
   };
 
-  // Pressing anywhere on the custom card (tag/header area, outside the input)
-  // routes through to focusing the input. The input is always editable, so the
-  // focus lands in a single tap and fires onFocus below — no setTimeout race.
+  // Two-tap to edit (matches the preset cards' "select first" feel): the FIRST
+  // tap only selects the custom card (pink border) without raising the keyboard.
+  // Once selected the input becomes editable, so a SECOND tap focuses it and the
+  // keyboard comes up. On the first tap the input is editable=false, so a tap on
+  // it bubbles to this Pressable — card-vs-input taps behave identically.
   const handleSelectCustom = () => {
     if (disabled) return;
+    if (selectedId !== 'custom') {
+      setSelectedId('custom');
+      onChange(customText, null);
+      return;
+    }
     customInputRef.current?.focus();
   };
 
@@ -182,7 +190,9 @@ export function BioPhrasePicker({
           ref={customInputRef}
           value={customText}
           onChangeText={handleCustomTextChange}
-          editable={!disabled}
+          // Only focusable once the card is selected — this is what makes the
+          // first tap "select" and the second tap "focus" (see handleSelectCustom).
+          editable={!disabled && selectedId === 'custom'}
           placeholder={t('setupProfile.bioPicker.customPlaceholder')}
           onFocus={handleCustomFocus}
         />

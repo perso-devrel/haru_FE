@@ -40,8 +40,15 @@
 
 ### 다운로드
 
-- **App Store** → [하루 — 목소리 데이팅](https://apps.apple.com/kr/app/%ED%95%98%EB%A3%A8-%EB%AA%A9%EC%86%8C%EB%A6%AC-%EB%8D%B0%EC%9D%B4%ED%8C%85-%EC%99%B8%EA%B5%AD%EC%9D%B8-%EC%86%8C%EA%B0%9C%ED%8C%85/id6779128759)
-- **Google Play** → [하루](https://play.google.com/store/apps/details?id=com.haruvoice.app&hl=ko&gl=KR)
+<p align="center">
+  <a href="https://apps.apple.com/kr/app/%ED%95%98%EB%A3%A8-%EB%AA%A9%EC%86%8C%EB%A6%AC-%EB%8D%B0%EC%9D%B4%ED%8C%85-%EC%99%B8%EA%B5%AD%EC%9D%B8-%EC%86%8C%EA%B0%9C%ED%8C%85/id6779128759">
+    <img alt="App Store에서 다운로드" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="52">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://play.google.com/store/apps/details?id=com.haruvoice.app&hl=ko&gl=KR">
+    <img alt="Google Play에서 다운로드" src="https://play.google.com/intl/ko/badges/static/images/badges/ko_badge_web_generic.png" height="76">
+  </a>
+</p>
 
 ---
 
@@ -235,14 +242,7 @@ src/
 
 ## 워크스페이스 분리
 
-이 디렉터리는 모바일 앱 전용입니다. 같은 폴더 트리 안에 두 개의 Next.js 워크스페이스가 추가로 있는데, **각자 자체 lockfile / tsconfig / node_modules** 라서 Metro 와 Turbopack 이 충돌하지 않습니다.
-
-| 워크스페이스 | 역할 |
-|---|---|
-| `web/` | 마케팅 랜딩 페이지 (Next.js 15 + Tailwind v4 + next-intl) |
-| `admin/` | 운영자용 대시보드 (dev/QA 전용, **출시 시 `ADMIN_DASHBOARD_ENABLED=false` + Vercel 프로젝트 disable + `cleanup:dev` 3단계 필수**) |
-
-자세한 가드레일은 `admin/CLAUDE.md`.
+이 디렉터리는 모바일 앱 전용입니다. 같은 폴더 트리 안에 마케팅 랜딩 페이지(`web/`, Next.js 15 + Tailwind v4 + next-intl)가 별도 워크스페이스로 들어 있는데, **자체 lockfile / tsconfig / node_modules** 라서 Metro 와 Turbopack 이 충돌하지 않습니다.
 
 ---
 

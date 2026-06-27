@@ -325,6 +325,7 @@ export default function ProfileScreen() {
   };
 
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const closeSheet = () => setActivePhotoIndex(null);
   const handlePhotoPress = (index: number) => setActivePhotoIndex(index);
 
@@ -347,6 +348,10 @@ export default function ProfileScreen() {
   };
 
   const handleDownloadPhoto = async (position: number) => {
+    // 재진입 가드: BE 워터마크 합성+다운로드가 수 초 걸리므로 버튼 연타/대기 중
+    // 다른 조작이 들어오면 다운로드가 병렬로 쌓여 네트워크·CPU 경합으로 렉이 난다.
+    if (downloading) return;
+    setDownloading(true);
     try {
       // writeOnly=true 로 갤러리 저장 권한만 요청 (사진 읽기 권한은 ImagePicker
       // 가 별도 관리). iOS 14+ 의 limited photos selection 도 saveToLibrary
@@ -370,6 +375,8 @@ export default function ProfileScreen() {
         title: t('profile.downloadFailed'),
         message: userFacingError(e, t),
       });
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -859,15 +866,22 @@ export default function ProfileScreen() {
                   style={({ pressed }) => [
                     styles.previewDownloadBtn,
                     pressed && styles.previewDownloadBtnPressed,
+                    downloading && styles.previewDownloadBtnDisabled,
                   ]}
                   onPress={() => {
                     if (activePhotoIndex !== null) handleDownloadPhoto(activePhotoIndex);
                   }}
+                  disabled={downloading}
                   accessibilityRole="button"
                   accessibilityLabel={t('profile.downloadPhoto')}
+                  accessibilityState={{ disabled: downloading, busy: downloading }}
                   hitSlop={8}
                 >
-                  <Ionicons name="download-outline" size={22} color={colors.white} />
+                  {downloading ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Ionicons name="download-outline" size={22} color={colors.white} />
+                  )}
                 </Pressable>
               </View>
             ) : null}
@@ -1250,6 +1264,9 @@ const styles = StyleSheet.create({
   },
   previewDownloadBtnPressed: {
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  previewDownloadBtnDisabled: {
+    opacity: 0.6,
   },
   previewCloseBtn: {
     position: 'absolute',

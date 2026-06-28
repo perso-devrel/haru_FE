@@ -4,9 +4,9 @@
     "description": "Global dating through voice. Messages auto-translate and play back in your own voice—meet friends and partners with no language barrier."
   },
   "hero": {
-    "eyebrow": "Meet friends & partners worldwide by voice",
+    "eyebrow": "Voice preview",
     "title": "First impressions, met by voice",
-    "subtitle": "Swipe through profiles and listen to each person's voice.\nFeel the mood and tone behind the photo, and discover their real charm.",
+    "subtitle": "Swipe through profiles and listen to each person's voice. Feel the mood and tone behind the photo, and discover their real charm.",
     "ctaPrimary": "Get free early access",
     "ctaStore": "Google Play",
     "imageAlt": "haru Discover screen — listening to someone's voice intro on a profile card"
@@ -18,7 +18,10 @@
       "tag": "Art profile",
       "title": "Your very own art profile",
       "body": "haru turns your real photos into an art profile that's all yours — a spoonful of mood and two spoonfuls of charm. If showing real photos always made you hesitate, start comfortably with an art profile instead.",
-      "imageAlt": "haru profile screen — photos rendered in a warm illustrated style"
+      "imageAlt": "haru profile screen — photos rendered in a warm illustrated style",
+      "before": "Original",
+      "after": "Art profile",
+      "beforeAlt": "Real photo before conversion"
     },
     "translate": {
       "tag": "Auto translation",
@@ -45,9 +48,9 @@
     "imageAlt": "haru matching preferences screen — choosing preferred age, gender, and nationality",
     "items": [
       "Anyone hoping to meet someone new from Korea, Japan, and beyond",
-      "Anyone who wants to exchange languages with people abroad",
+      "Anyone who wants to make foreign friends or exchange languages",
       "Anyone whose ideal type is a great voice",
-      "Anyone who wants to show off their own voice",
+      "Anyone who wants to charm others with their own voice",
       "Anyone who feels uneasy showing real photos"
     ]
   },

@@ -11,8 +11,8 @@ const LABELS: Record<AppLocale, string> = {
   en: 'English',
 };
 
-// Surface all three supported locales. Order: Korean, English, Japanese.
-const VISIBLE_LOCALES: readonly AppLocale[] = ['ko', 'en', 'ja'];
+// Surface all three supported locales. Order: Korean, Japanese, English.
+const VISIBLE_LOCALES: readonly AppLocale[] = ['ko', 'ja', 'en'];
 
 export default function LangSwitcher() {
   const locale = useLocale() as AppLocale;

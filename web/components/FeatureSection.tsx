@@ -1,6 +1,9 @@
-import { useTranslations } from 'next-intl';
-import PhoneShot from './PhoneShot';
-import { SCREENS } from '@/lib/screens';
+import { useLocale, useTranslations } from 'next-intl';
+import ArtProfileCard from './cards/ArtProfileCard';
+import TranslateBubble from './cards/TranslateBubble';
+import EmotionThread from './cards/EmotionThread';
+import VoiceIntroCard from './cards/VoiceIntroCard';
+import { ART_PROFILE, TRANSLATE_BUBBLE, EMOTION_THREAD, VOICE_INTRO, type Locale } from '@/lib/cardData';
 
 /**
  * The three supporting differentiators from the store listing, each paired
@@ -14,26 +17,27 @@ import { SCREENS } from '@/lib/screens';
 // image on the LEFT and alternates — keeping all four areas in one continuous
 // zigzag (right → left → right → left).
 const FEATURES = [
+  { key: 'translate', emoji: '🌏', screen: 'chat', reverse: true },
+  { key: 'emotion', emoji: '💗', screen: 'chat', reverse: false },
   { key: 'art', emoji: '🎨', screen: 'profile', reverse: true },
-  { key: 'translate', emoji: '🌏', screen: 'chat', reverse: false },
-  { key: 'emotion', emoji: '💗', screen: 'chat', reverse: true },
   { key: 'voiceintro', emoji: '🗣️', screen: 'voice', reverse: false },
 ] as const;
 
 export default function FeatureSection() {
   const t = useTranslations('features');
+  const locale = useLocale() as Locale;
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-      <div className="flex flex-col gap-20 md:gap-28">
+    <section className="mx-auto max-w-6xl px-6 py-8 md:py-10">
+      <div className="flex flex-col gap-16 md:gap-20">
         {FEATURES.map((f) => (
           <div
             key={f.key}
-            className="grid items-center gap-10 md:grid-cols-2 md:gap-16"
+            className="grid items-center gap-10 md:min-h-[460px] md:grid-cols-2 md:gap-16"
           >
             {/* Copy */}
             <div
-              className={`flex flex-col items-center gap-4 text-center md:items-start md:text-left ${
+              className={`flex flex-col items-center gap-4 text-center md:min-h-[210px] md:items-start md:text-left ${
                 f.reverse ? 'md:order-2' : ''
               }`}
             >
@@ -51,12 +55,28 @@ export default function FeatureSection() {
 
             {/* Visual */}
             <div className={`flex justify-center ${f.reverse ? 'md:order-1' : ''}`}>
-              <PhoneShot
-                src={SCREENS[f.screen].src}
-                header={SCREENS[f.screen].header}
-                footer={SCREENS[f.screen].footer}
-                alt={t(`${f.key}.imageAlt`)}
-              />
+              {f.key === 'art' ? (
+                <ArtProfileCard
+                  data={ART_PROFILE[locale] ?? ART_PROFILE.ko}
+                  originalAlt={t('art.beforeAlt')}
+                  convertedAlt={t('art.imageAlt')}
+                />
+              ) : f.key === 'translate' ? (
+                <TranslateBubble
+                  data={TRANSLATE_BUBBLE[locale] ?? TRANSLATE_BUBBLE.ko}
+                  avatarAlt={t('translate.imageAlt')}
+                />
+              ) : f.key === 'emotion' ? (
+                <EmotionThread
+                  data={EMOTION_THREAD[locale] ?? EMOTION_THREAD.ko}
+                  avatarAlt={t('emotion.imageAlt')}
+                />
+              ) : (
+                <VoiceIntroCard
+                  data={VOICE_INTRO[locale] ?? VOICE_INTRO.ko}
+                  editLabel={t('voiceintro.tag')}
+                />
+              )}
             </div>
           </div>
         ))}

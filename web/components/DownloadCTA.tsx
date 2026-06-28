@@ -14,7 +14,7 @@ export default function DownloadCTA() {
 
   return (
     <section id="download" className="scroll-mt-24">
-      <div className="mx-auto max-w-3xl px-6 py-20 text-center md:py-28">
+      <div className="mx-auto max-w-3xl px-6 py-8 text-center md:py-10">
         <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--color-primary-dark)]">
           {t('eyebrow')}
         </span>

@@ -10,7 +10,7 @@ export default function RecommendSection() {
   const items = t.raw('items') as string[];
 
   return (
-    <section className="px-6 py-20 md:py-28">
+    <section className="px-6 py-8 md:py-10">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 rounded-3xl bg-white px-8 py-12 text-center shadow-[0_20px_60px_-25px_rgba(58,35,64,0.18)] md:px-12 md:py-14">
         <h2 className="break-keep text-3xl font-bold leading-tight text-[color:var(--color-text)] md:text-4xl">
           {t('title')}

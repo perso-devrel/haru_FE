@@ -64,14 +64,26 @@ export function getVisibleSlots(
 }
 
 /**
- * Default-selected slot on first render — the first visible (non-author)
- * slot in `VOICE_INTRO_SLOT_LANGUAGES` order. ko → ja, ja → ko, en → ko,
- * th/hi → ko.
+ * Default-selected slot on first render, keyed on the author's (normalized)
+ * slot. Explicit mapping rather than "first visible slot" so the default
+ * leans into the cross-language pairing we want to surface:
+ *   ko → ja, ja → ko, en → ko (th/hi normalize to en → ko).
+ * Every value differs from its key, so the result is always a visible
+ * (non-author) slot.
  */
+const DEFAULT_SLOT_BY_AUTHOR: Record<
+    VoiceIntroSlotLanguage,
+    VoiceIntroSlotLanguage
+> = {
+    ko: "ja",
+    ja: "ko",
+    en: "ko",
+};
+
 export function pickDefaultSlot(
     authorLanguage: string,
 ): VoiceIntroSlotLanguage {
-    return getVisibleSlots(authorLanguage)[0];
+    return DEFAULT_SLOT_BY_AUTHOR[getAuthorSlot(authorLanguage)];
 }
 
 /**

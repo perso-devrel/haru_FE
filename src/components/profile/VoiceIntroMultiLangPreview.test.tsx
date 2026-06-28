@@ -75,7 +75,7 @@ describe('getVisibleSlots', () => {
 });
 
 describe('pickDefaultSlot', () => {
-  it('returns the first visible (non-author) slot', () => {
+  it('maps each author slot to its cross-language default (ko→ja, ja→ko, en→ko)', () => {
     expect(pickDefaultSlot('ko')).toBe('ja');
     expect(pickDefaultSlot('ja')).toBe('ko');
     expect(pickDefaultSlot('en')).toBe('ko');

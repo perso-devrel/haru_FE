@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { Pressable, Text, View, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, Text, View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,6 +52,51 @@ export function AudioPlayer({ url, compact = false, showProgressBar = false, sho
   const currentTime = status.currentTime || 0;
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
+  // expo-audio surfaces playback status only every ~250–500ms, so binding the
+  // play-bar fill straight to `progress` makes it jump in discrete steps. We
+  // drive an Animated value instead: each status tick we animate linearly
+  // toward the end over the *remaining* real time, so the fill moves
+  // continuously between ticks. Only consumed by the `showBar` variant below.
+  const fillAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isPlaying && duration > 0) {
+      let cancelled = false;
+      // Read where the bar actually is right now, then decide the start point.
+      fillAnim.stopAnimation((current) => {
+        if (cancelled) return;
+        // The reported currentTime lags the true playback head (worst right
+        // after play starts / during buffering), so `progress` can briefly be
+        // *behind* the bar. Snapping back to it is the "stutter + jump back".
+        // Keep the bar monotonic forward — only honor a backward move when it's
+        // large enough to be a real seek/replay (seek-to-0 on replay).
+        const isRealSeekBack = current - progress > 0.2;
+        const start = isRealSeekBack ? progress : Math.max(current, progress);
+        fillAnim.setValue(start);
+        const remainingMs = Math.max((duration - currentTime) * 1000, 0);
+        Animated.timing(fillAnim, {
+          toValue: 1,
+          duration: remainingMs,
+          easing: Easing.linear,
+          // width % can't be driven natively — keep it on the JS driver.
+          useNativeDriver: false,
+        }).start();
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+    // paused / stopped / ended → hold the fill at the real progress.
+    fillAnim.stopAnimation();
+    fillAnim.setValue(progress);
+  }, [isPlaying, duration, currentTime, progress, fillAnim]);
+
+  const fillWidth = fillAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+    extrapolate: 'clamp',
+  });
+
   const toggle = useCallback(() => {
     if (isPlaying) {
       player.pause();
@@ -81,10 +126,10 @@ export function AudioPlayer({ url, compact = false, showProgressBar = false, sho
           />
         </Pressable>
         <View style={styles.barTrack}>
-          <View
+          <Animated.View
             style={[
               styles.barFill,
-              { width: `${progress * 100}%`, backgroundColor: tintColor },
+              { width: fillWidth, backgroundColor: tintColor },
             ]}
           />
         </View>

@@ -254,7 +254,7 @@ export const VOICE_INTRO: Record<Locale, VoiceIntroData> = {
       { label: '日本語', audio: '/cards/voiceintro-ko-ja.mp3' },
       { label: '영어', audio: '/cards/voiceintro-ko-en.mp3' },
     ],
-    selected: 1,
+    selected: 0,
   },
   en: {
     title: 'Voice intro',
@@ -263,7 +263,7 @@ export const VOICE_INTRO: Record<Locale, VoiceIntroData> = {
       { label: '日本語', audio: '/cards/voiceintro-en-ja.mp3' },
       { label: '한국어', audio: '/cards/voiceintro-en-ko.mp3' },
     ],
-    selected: 1,
+    selected: 0,
   },
   ja: {
     title: 'ボイスひとこと',
@@ -272,7 +272,7 @@ export const VOICE_INTRO: Record<Locale, VoiceIntroData> = {
       { label: '한국어', audio: '/cards/voiceintro-ja-ko.mp3' },
       { label: 'English', audio: '/cards/voiceintro-ja-en.mp3' },
     ],
-    selected: 1,
+    selected: 0,
   },
 };
 

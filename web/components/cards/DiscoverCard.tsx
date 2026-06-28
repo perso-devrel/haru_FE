@@ -142,7 +142,9 @@ export default function DiscoverCard({
 
       {/* Controls: Skip · Play · Like */}
       <div className="discover-controls">
-        <button type="button" className="discover-side" onClick={toggle} aria-label="Skip">
+        {/* Decorative in the marketing card — keeps the :active press effect
+            (CSS) but does not play audio; only the centre button does. */}
+        <button type="button" className="discover-side" aria-label="Skip">
           <span className="discover-side-label" style={{ color: '#fff' }}>Skip</span>
           <svg viewBox="0 0 24 24" width="36" height="36" fill="#fff" aria-hidden>
             <path d="M11 12 19 6v12zM3 12l8-6v12z" />
@@ -176,7 +178,7 @@ export default function DiscoverCard({
           </svg>
         </button>
 
-        <button type="button" className="discover-side" onClick={toggle} aria-label="Like">
+        <button type="button" className="discover-side" aria-label="Like">
           <svg viewBox="0 0 24 24" width="36" height="36" fill="#FF5D87" aria-hidden>
             <path d="M13 12 5 6v12zM21 12l-8-6v12z" />
           </svg>

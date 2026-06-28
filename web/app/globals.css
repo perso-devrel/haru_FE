@@ -148,126 +148,8 @@ body {
     overflow-wrap: anywhere;
 }
 
-/* Sunset gradient used by the hero — defined here so multiple sections can
-   layer it (background + soft-glow accents) without repeating the stops. */
-.bg-sunset {
-    background: linear-gradient(
-        140deg,
-        #ffe8cc 0%,
-        #ffc1a6 25%,
-        #e27aa0 55%,
-        #8a5a8c 80%,
-        #3d2347 100%
-    );
-}
-
-.bg-dawn {
-    background: linear-gradient(180deg, #fff4ee 0%, #fde1e8 60%, #f3e0f0 100%);
-}
-
 .bg-primary-gradient {
     background: linear-gradient(135deg, #f6b5c8 0%, #e27aa0 100%);
-}
-
-/* Soft outer glow used on the phone mockup so it feels like it's floating
-   on a warm twilight surface, not pasted onto the page. */
-.shadow-glow {
-    box-shadow:
-        0 30px 80px -20px rgba(226, 122, 160, 0.45),
-        0 12px 32px -8px rgba(58, 35, 64, 0.18);
-}
-
-/* ───────────────────────────────────────────────────────────
-   haru iPhone mockup — ported verbatim from the design drop-in
-   (landing/phone.html). A raw app screen (public/screenshots/*)
-   is wrapped with a dark bezel + rounded screen + status bar
-   (time / Dynamic Island / signal·wifi·battery). All sizes derive
-   from the --w custom property so one value scales the whole frame.
-   Set --w responsively on the element; set --header to the screen's
-   app-header colour so the status bar blends into the screenshot.
-   ─────────────────────────────────────────────────────────── */
-.haru-phone {
-    --w: min(300px, 78vw);
-    --header: #fff4ee; /* status-bar bg = app header colour */
-    --bezel: calc(var(--w) * 0.03);
-    --ink: #1d1320;
-    width: var(--w);
-    padding: var(--bezel);
-    background: #0e0a12; /* phone body */
-    border-radius: calc(var(--w) * 0.15);
-    box-shadow:
-        0 calc(var(--w) * 0.09) calc(var(--w) * 0.2) rgba(58, 35, 64, 0.28),
-        0 calc(var(--w) * 0.015) calc(var(--w) * 0.04) rgba(58, 35, 64, 0.16);
-    box-sizing: border-box;
-}
-.haru-phone .screen {
-    position: relative;
-    border-radius: calc(var(--w) * 0.12);
-    overflow: hidden;
-    background: var(--header);
-    line-height: 0;
-}
-.haru-phone .statusbar {
-    position: relative;
-    height: calc(var(--w) * 0.132);
-    background: var(--header);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 calc(var(--w) * 0.07);
-    color: var(--ink);
-    box-sizing: border-box;
-    line-height: 1;
-}
-.haru-phone .time {
-    font-weight: 700;
-    font-size: calc(var(--w) * 0.044);
-    letter-spacing: 0.2px;
-}
-.haru-phone .island {
-    position: absolute;
-    left: 50%;
-    top: calc(var(--w) * 0.03);
-    transform: translateX(-50%);
-    width: calc(var(--w) * 0.25);
-    height: calc(var(--w) * 0.066);
-    background: #0a0a0a;
-    border-radius: 999px;
-}
-.haru-phone .icons {
-    display: flex;
-    align-items: center;
-    gap: calc(var(--w) * 0.014);
-    height: calc(var(--w) * 0.04);
-}
-.haru-phone .icons svg {
-    height: 100%;
-    width: auto;
-    display: block;
-    fill: var(--ink);
-}
-.haru-phone img.app {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-/* Bottom safe-area strip in the screen's own nav-bar colour, with the iOS
-   home-indicator pill — gives the screenshot breathing room above the rounded
-   bottom bezel instead of butting against it. */
-.haru-phone .homebar {
-    height: calc(var(--w) * 0.058);
-    background: var(--footer);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.haru-phone .homebar::after {
-    content: "";
-    width: calc(var(--w) * 0.36);
-    height: calc(var(--w) * 0.012);
-    border-radius: 999px;
-    background: rgba(29, 19, 32, 0.32);
-    margin-bottom: calc(var(--w) * 0.008);
 }
 
 /* ───────────────────────────────────────────────────────────
@@ -499,7 +381,9 @@ body {
     align-items: center;
     justify-content: center;
     gap: 14px;
-    width: min(460px, 94vw);
+    /* 100% (not vw) so the right "after" shot isn't clipped by the section's
+       px-6 padding on mobile. */
+    width: min(460px, 100%);
     margin: 0 auto;
 }
 .art-shot {
@@ -571,7 +455,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    width: min(390px, 92vw);
+    /* 100% (not vw) so the card stays inside the section's px-6 padding instead
+       of spilling past the right edge on mobile. */
+    width: min(390px, 100%);
     margin: 0 auto;
 }
 .tb-row {
@@ -767,7 +653,7 @@ body {
    Voice-intro card — the app's "보이스 한마디" multi-language preview.
    ─────────────────────────────────────────────────────────── */
 .vi-card {
-    width: min(370px, 90vw);
+    width: min(370px, 100%);
     margin: 0 auto;
     padding: 18px 22px 20px;
     border-radius: 26px;
@@ -959,16 +845,21 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Subtle blur ring behind the phone — sits below the device frame. */
-.aura {
-    position: absolute;
-    inset: -8% -10%;
-    background: radial-gradient(
-        ellipse at center,
-        rgba(255, 193, 166, 0.55) 0%,
-        rgba(226, 122, 160, 0.35) 35%,
-        rgba(255, 244, 238, 0) 70%
-    );
-    filter: blur(40px);
-    z-index: -1;
+/* ───────────────────────────────────────────────────────────
+   Mobile overrides — the demo cards above are tuned for the wide
+   two-column desktop layout; on narrow screens we drop the desktop-only
+   left-pull and let one-line elements wrap so nothing clips off-edge.
+   ─────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* The partner row's desktop left-pull (-40px) would shove the avatar past
+       the left viewport edge on phones — align it to the thread instead. */
+    .tb-row {
+        margin-left: 0;
+    }
+    /* Let the one-line sent bubble and the intro phrase wrap instead of
+       overflowing the card to the right on narrow screens. */
+    .tb-original.tb-original--mine,
+    .vi-text {
+        white-space: normal;
+    }
 }

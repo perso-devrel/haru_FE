@@ -20,7 +20,7 @@ export default function EmotionThread({
   const partnerBlock = (
     <div className="tb-row em-row">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="tb-avatar" src={data.avatar} alt={avatarAlt} />
+      <img className="tb-avatar" src={data.avatar} alt={avatarAlt} width={46} height={46} loading="lazy" />
       <div className="tb-bubble em-bubble">
         {!data.mineFirst && (
           <span className="em-badge em-badge--theirs" aria-hidden>{data.partner.emoji}</span>

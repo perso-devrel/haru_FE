@@ -23,7 +23,7 @@ export default function ArtProfileCard({
       <figure className="art-shot">
         <div className="art-frame">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.original} alt={originalAlt} />
+          <img src={data.original} alt={originalAlt} width={720} height={960} loading="lazy" />
         </div>
         <figcaption className="art-caption">{t('before')}</figcaption>
       </figure>
@@ -38,7 +38,7 @@ export default function ArtProfileCard({
       <figure className="art-shot">
         <div className="art-frame art-frame--art">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.converted} alt={convertedAlt} />
+          <img src={data.converted} alt={convertedAlt} width={720} height={960} loading="lazy" />
           <span className="art-badge" aria-hidden>✨</span>
         </div>
         <figcaption className="art-caption art-caption--art">{t('after')}</figcaption>

@@ -19,8 +19,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
+  const siteUrl = getSiteUrl();
+  // og:url should be the page's own URL. localePrefix is 'as-needed', so the
+  // default locale (ko) lives at the root and the others under /<locale>.
+  const ogUrl = locale === routing.defaultLocale ? siteUrl : `${siteUrl}/${locale}`;
   return {
-    metadataBase: new URL(getSiteUrl()),
+    metadataBase: new URL(siteUrl),
     title: t('title'),
     description: t('description'),
     // 네이버 서치어드바이저 사이트 소유확인. 공개 토큰이라 하드코딩 안전.
@@ -31,6 +35,7 @@ export async function generateMetadata({
     openGraph: {
       title: t('title'),
       description: t('description'),
+      url: ogUrl,
       images: [`/og/${locale}.png`],
       locale,
       type: 'website',

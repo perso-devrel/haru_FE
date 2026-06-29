@@ -45,9 +45,9 @@ export default function FeatureSection() {
                 <span aria-hidden>{f.emoji}</span>
                 {t(`${f.key}.tag`)}
               </span>
-              <h3 className="break-keep text-3xl font-bold leading-snug text-[color:var(--color-text)] md:text-4xl">
+              <h2 className="break-keep text-3xl font-bold leading-snug text-[color:var(--color-text)] md:text-4xl">
                 {t(`${f.key}.title`)}
-              </h3>
+              </h2>
               <p className="max-w-md break-keep text-lg leading-relaxed text-[color:var(--color-text-secondary)]">
                 {t(`${f.key}.body`)}
               </p>

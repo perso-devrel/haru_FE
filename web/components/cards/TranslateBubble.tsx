@@ -38,7 +38,7 @@ export default function TranslateBubble({
   const partnerBlock = (
     <div className={`tb-row${data.partnerFirst ? ' tb-row--lead' : ''}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="tb-avatar" src={data.avatar} alt={avatarAlt} />
+      <img className="tb-avatar" src={data.avatar} alt={avatarAlt} width={46} height={46} loading="lazy" />
       <div className="tb-partner-stack">
         {data.partner.map((msg, i) => (
           <div key={i} className="tb-bubble">
